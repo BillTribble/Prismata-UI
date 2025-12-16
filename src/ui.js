@@ -326,6 +326,12 @@ function setupControls() {
         if (compareViewer) compareViewer.onResize();
       }, 300);
     });
+
+    // Mobile Default: Hide Info
+    if (window.innerWidth < 900) {
+      document.querySelector('.ui-layer').classList.add('no-details');
+      btnToggleInfo.textContent = "SHOW INFO";
+    }
   }
 
   // About Modal Logic
