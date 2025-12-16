@@ -220,6 +220,12 @@ async function loadGallery() {
           navList.appendChild(groupDiv);
         });
 
+    // Auto-select first item
+    setTimeout(() => {
+      const firstItem = navList.querySelector('.crystal-item');
+      if (firstItem) firstItem.click();
+    }, 100);
+
     } catch (err) {
       console.error("Failed to load manifest:", err);
       navList.innerHTML = `<div style="color:red; padding:1rem;">ERROR CONNECTING TO ARCHIVE<br>${err.message}</div>`;
