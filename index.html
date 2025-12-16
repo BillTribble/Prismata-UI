@@ -3,45 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prismata Crystal Viewer</title>
-    <style>
-        body { margin: 0; overflow: hidden; background-color: #050510; font-family: 'Inter', sans-serif; }
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #ccc;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 8px;
-            backdrop-filter: blur(5px);
-            border: 1px solid #333;
-            max-width: 300px;
-        }
-        h1 { margin: 0 0 10px 0; font-size: 1.2rem; background: linear-gradient(90deg, #00ffff, #0088ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p { font-size: 0.9rem; line-height: 1.4; margin-bottom: 10px; }
-        #drop-zone {
-            border: 2px dashed #444;
-            padding: 20px;
-            text-align: center;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        #drop-zone:hover { border-color: #00ffff; }
-        #status { font-size: 0.8rem; color: #888; margin-top: 10px; }
-    </style>
+    <title>PRISMATA | AI Art Gallery</title>
+    <link rel="stylesheet" href="./src/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
 </head>
 <body>
-    <div id="info">
-        <h1>Prismata Viewer</h1>
-        <p>Drag & Drop your <b>.ply</b> file here to visualize the AI Crystal.</p>
-        <div id="drop-zone">Drop PLY File Here</div>
-        <div id="status">Waiting for file...</div>
-        <div style="margin-top: 15px; font-size: 0.8rem; color: #666;">
-            Controls: Left Click to Rotate, Right Click to Pan, Wheel to Zoom.
+    <div id="app">
+        <!-- 3D Viewports -->
+        <div id="viewer-container" class="viewer-layout">
+            <div id="view-main" class="viewport active"></div>
+            <div id="view-compare" class="viewport hidden">
+                <div class="empty-state">SELECT ARTIFACT TO COMPARE</div>
+            </div>
+        </div>
+    
+        <!-- UI Overlay -->
+        <div class="ui-layer">
+            <!-- Header -->
+            <header class="gallery-header">
+                <div class="logo-text">
+                    <h1>PRISMATA</h1>
+                    <span class="subtitle">NEURAL ARCHITECTURE GALLERY</span>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">SYSTEM ONLINE</span>
+                </div>
+            </header>
+    
+            <!-- Left Sidebar: Gallery Navigation -->
+            <aside class="gallery-nav">
+                <div class="nav-header">
+                    <h2>MODELS</h2>
+                    <div class="nav-controls">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="compare-toggle">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="control-label">COMPARE MODE</span>
+                    </div>
+                    <div class="line-deco"></div>
+                </div>
+                <div id="model-list" class="scroll-container">
+                    <!-- Populated by JS -->
+                </div>
+            </aside>
+    
+            <!-- Right Panel: Artifact Details -->
+            <aside class="artifact-details">
+                <!-- PANEL A (Main) -->
+                <div id="panel-a" class="details-content glass-panel">
+                    <div class="detail-header">
+                        <h2 id="crystal-title-a">SELECT ARTIFACT</h2>
+                        <span id="crystal-type-a" class="type-badge">WAITING...</span>
+                    </div>
+                    <div class="detail-body">
+                        <div id="crystal-desc-a">Initialize gallery protocol to view neural structures.</div>
+    
+                        <div class="metadata-grid">
+                            <div class="meta-item">
+                                <span class="label">NODES</span>
+                                <span class="value" id="meta-nodes-a">--</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="label">LINKS</span>
+                                <span class="value" id="meta-links-a">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- PANEL B (Comparison) -->
+                <div id="panel-b" class="details-content glass-panel hidden">
+                    <div class="detail-header">
+                        <h2 id="crystal-title-b">SELECT TARGET</h2>
+                        <span id="crystal-type-b" class="type-badge">WAITING...</span>
+                    </div>
+                    <div class="detail-body">
+                        <div id="crystal-desc-b">Select a second artifact to compare architecture.</div>
+    
+                        <div class="metadata-grid">
+                            <div class="meta-item">
+                                <span class="label">NODES</span>
+                                <span class="value" id="meta-nodes-b">--</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="label">LINKS</span>
+                                <span class="value" id="meta-links-b">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Shared Controls (Bottom) -->
+                <div class="glass-panel controls-panel">
+                    <div class="controls">
+                        <button id="btn-spin" class="cyber-btn active">AUTO-ROTATE</button>
+                        <button id="btn-reset" class="cyber-btn">RESET VIEW</button>
+                    </div>
+                </div>
+    
+                <!-- Loading Overlay -->
+                <div id="loader" class="loader-overlay hidden">
+                    <div class="spinner"></div>
+                    <span class="loading-text">DECODING NEURAL LATTICE...</span>
+                </div>
+            </aside>
+    
+            <!-- Footer: Timeline / scrubber could go here later -->
+            <footer class="gallery-footer">
+                <div class="interaction-hint">
+                    LEFT CLICK: ROTATE // RIGHT CLICK: PAN // SCROLL: ZOOM
+                </div>
+            </footer>
         </div>
     </div>
-    <script type="module" src="/main.js"></script>
+<!-- Scripts -->
+<script type="module" src="./src/main.js"></script>
+<script type="module" src="./src/ui.js"></script>
 </body>
 </html>
