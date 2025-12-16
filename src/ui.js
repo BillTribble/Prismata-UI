@@ -114,7 +114,7 @@ function applyFilters() {
       const matchesQuery = groupTitle.includes(query) || name.includes(query) || desc.includes(query);
       let matchesTag = (tag === 'ALL') || (type === tag);
       if (tag === 'LLM') {
-        const llmTypes = ['Encoder', 'Decoder', 'Enc-Dec', 'Dense Decoder', 'CoT Decoder', 'MoE'];
+        const llmTypes = ['Encoder', 'Decoder', 'Enc-Dec', 'Dense Decoder', 'CoT Decoder', 'MoE', 'Mobile'];
         matchesTag = llmTypes.includes(type);
       }
 
@@ -162,7 +162,7 @@ function setActiveSlot(slot) {
 async function loadGallery() {
   try {
     // Force fresh load to avoid caching old filenames
-    const res = await fetch('./crystals/manifest.json?v=' + Date.now());
+    const res = await fetch('./crystals/manifest_db.json?v=' + Date.now());
     let models = await res.json();
 
     // Sort by Year (Descending: Recent -> Oldest)
@@ -245,7 +245,15 @@ async function handleLoadCrystal(data, slot) {
       let infoText = "";
       try {
         const res = await fetch(`./crystals/${data.modelId}/INFO.md`);
-        if (res.ok) infoText = await res.text();
+        if (res.ok) {
+          const text = await res.text();
+          // Vite fallback protection
+          if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+            infoText = data.desc || "No description available.";
+          } else {
+            infoText = text;
+          }
+        }
         else infoText = data.desc;
       } catch (e) {
         infoText = data.desc;
@@ -311,6 +319,51 @@ function setupControls() {
       }, 300);
     });
   }
+
+  // About Modal Logic
+  const btnAbout = document.getElementById('btn-about');
+  const modal = document.getElementById('about-modal');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+
+  if (btnAbout && modal) {
+    btnAbout.addEventListener('click', () => modal.classList.remove('hidden'));
+    btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+  }
+
+  // File Upload Logic
+  const fileInput = document.getElementById('file-upload');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      console.log("Loading custom file:", url);
+
+      // Force Main View logic
+      setActiveSlot('main');
+
+      mainViewer.loadCrystal(url).then(stats => {
+        // Update UI
+        if (uiElements.main.superTitle) uiElements.main.superTitle.textContent = "CUSTOM UPLOAD";
+        uiElements.main.title.textContent = file.name.toUpperCase().replace('.PLY', '');
+        uiElements.main.type.textContent = "USER DATA";
+        uiElements.main.nodes.textContent = stats.nodes.toLocaleString();
+        uiElements.main.links.textContent = stats.links.toLocaleString();
+        uiElements.main.desc.innerHTML = "PREVISUALIZATION MODE<br><br>Loaded local artifact: " + file.name;
+
+        // Close modal
+        if (modal) modal.classList.add('hidden');
+      }).catch(err => {
+        alert("Failed to load PLY: " + err);
+      });
+    });
+  }
+
 
   btnSpin.addEventListener('click', () => {
     const isActive = btnSpin.classList.toggle('active');

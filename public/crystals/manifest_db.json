@@ -1,17 +1,17 @@
 [
   {
-    "id": "deepseek25",
-    "name": "DeepSeek R1 (MoE)",
+    "id": "smollm",
+    "name": "SmolLM2 (360M)",
     "year": 2025,
-    "era": "The Age of Experts",
-    "type": "MoE",
-    "desc": "A dynamic Mixture-of-Experts model. Activating only 10% of its brain for any given thought.",
+    "era": "The Edge AI Era",
+    "type": "Mobile",
+    "desc": "The future is small. Running powerful intelligence locally on your phone.",
     "crystals": [
       {
         "id": "struct",
-        "name": "The Hive Mind",
-        "file": "crystals/moe2025/structure.ply",
-        "desc": "Sparse routing paths between experts."
+        "name": "The Pocket Brain",
+        "file": "crystals/smollm/structure_layers.ply",
+        "desc": "Highly optimized compact layers."
       }
     ]
   },

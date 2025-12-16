@@ -659,6 +659,23 @@ input:checked+.slider:before {
     grid-template-columns: 300px 1fr 0px !important;
 }
 
-.ui-layer.no-details .artifact-details {
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    backdrop-filter: blur(8px);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
     display: none;
+    /* Fallback */
 }

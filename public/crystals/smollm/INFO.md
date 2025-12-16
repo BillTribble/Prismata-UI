@@ -1,0 +1,1 @@
+**Architecture:** Transformer (360M)\n**Shape:** The Pocket Brain\n**Concept:** Edge Intelligence\n\nWhile giants dominate the cloud, SmolLM2 brings intelligence to the edge. Optimized for mobile devices, it represents the 2025 trend: AI Everywhere.

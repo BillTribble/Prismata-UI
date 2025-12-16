@@ -1,0 +1,1 @@
+**Architecture:** CNN (5 Layers)\n**Shape:** The First Spark\n**Concept:** The Origin\n\nLeNet-5 (1998) by Yann LeCun was the first convolutional neural network to successfully read handwritten checks. It proved that learning features was possible.

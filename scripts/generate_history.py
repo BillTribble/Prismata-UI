@@ -117,7 +117,14 @@ def generate_moe():
     save_ply("moe_2025.ply", vertices)
 
 def save_ply(filename, vertices):
-    vertex = np.array([(*v, *c) for v, c in vertices],
+    # vertices is list of ((x,y,z), r, g, b)
+    # Flatten it
+    vertex_data = []
+    for v_tuple in vertices:
+        xyz, r, g, b = v_tuple
+        vertex_data.append((xyz[0], xyz[1], xyz[2], r, g, b))
+
+    vertex = np.array(vertex_data,
                       dtype=[('x', 'f4'), ('y', 'f4'), ('z', 'f4'),
                              ('red', 'u1'), ('green', 'u1'), ('blue', 'u1')])
     el = PlyElement.describe(vertex, 'vertex')
