@@ -16,13 +16,22 @@ def get_model_structure(model):
     elif hasattr(model, 'layers'): layers = model.layers # Llama/Mistral
     elif hasattr(model, 'model') and hasattr(model.model, 'layers'): layers = model.model.layers # Llama-2
     
-    # CNN Support (ResNet)
-    # ResNet has 'stages', and each stage has 'layers'. We want to flatten this into one long list of blocks.
     elif hasattr(model, 'encoder') and hasattr(model.encoder, 'stages'):
         layers = []
         for stage in model.encoder.stages:
             for layer in stage.layers:
                 layers.append(layer)
+        return layers
+
+    # CLIP Support (Text + Vision)
+    elif hasattr(model, 'text_model') and hasattr(model, 'vision_model'):
+        layers = []
+        # Text Encoder
+        if hasattr(model.text_model, 'encoder'): 
+            layers.extend(model.text_model.encoder.layers)
+        # Vision Encoder
+        if hasattr(model.vision_model, 'encoder'): 
+            layers.extend(model.vision_model.encoder.layers)
         return layers
 
     if layers is None:

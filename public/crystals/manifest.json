@@ -1,5 +1,33 @@
 [
   {
+    "id": "gemma2",
+    "name": "Gemma 2 (2B)",
+    "type": "Dense Decoder",
+    "desc": "Google's open model. Highly efficient knowledge compression.",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "Structure Layers",
+        "file": "crystals/gemma2/structure_layers.ply",
+        "desc": "Dense obsidian-like lattice."
+      }
+    ]
+  },
+  {
+    "id": "clip",
+    "name": "CLIP (ViT-B/32)",
+    "type": "Multimodal",
+    "desc": "The bridge between Vision and Language. Two architectures (Visual + Text) side-by-side.",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "Structure Layers",
+        "file": "crystals/clip/structure_layers.ply",
+        "desc": "Twin towers converging."
+      }
+    ]
+  },
+  {
     "id": "gpt2",
     "name": "GPT-2 (Small)",
     "type": "Decoder",
