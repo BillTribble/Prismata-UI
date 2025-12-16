@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { flowVertexShader, flowFragmentShader } from './viewer/shaders.js';
+
 
 export class CrystalViewer {
   constructor(containerId) {
@@ -16,7 +16,7 @@ export class CrystalViewer {
       this.animationId = null;
     this.uniforms = {
       uTime: { value: 0 },
-      uSize: { value: 1.5 } // Drastically reduced from 8.0
+      uSize: { value: 0.2 } // Super tiny (was 1.5, initially 8.0)
     };
 
       this.init();
@@ -217,14 +217,14 @@ export class CrystalViewer {
       const group = new THREE.Group();
 
       // Points
-    // Points (Shader)
-    const pointMaterial = new THREE.ShaderMaterial({
-      uniforms: this.uniforms,
-      vertexShader: flowVertexShader,
-      fragmentShader: flowFragmentShader,
+    // Points (Standard)
+    const pointMaterial = new THREE.PointsMaterial({
+      size: 0.15,
+      vertexColors: true,
         transparent: true,
+      opacity: 0.9,
         blending: THREE.AdditiveBlending,
-        depthWrite: false // Improves glass sorting
+      sizeAttenuation: true
       });
       const mesh = new THREE.Points(geometry, pointMaterial);
       group.add(mesh);
