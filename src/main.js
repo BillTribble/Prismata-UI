@@ -209,7 +209,7 @@ export class CrystalViewer {
 
       // Points
       const pointMaterial = new THREE.PointsMaterial({
-        size: 0.2, // Tuned size
+        size: 0.15, // Tuned size (reduced from 0.2 for clarity)
         vertexColors: true,
         transparent: true,
         opacity: 0.9,
