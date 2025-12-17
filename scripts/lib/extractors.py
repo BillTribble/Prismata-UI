@@ -58,6 +58,57 @@ def extract_weights(block):
             # For Conv: [Out, In*K*K]. We want [In*K*K, Out].
             
             return w.reshape(out_ch, -1).T
+    
+    # 3. Simple Linear (Perceptron)
+    if isinstance(block, nn.Linear):
+         w = block.weight.detach().numpy() # [Out, In]
+         return w.T # [In, Out] -> PCA on In samples? No. 
+         # PCA logic: [Samples, Features]. 
+         # We want Points = Neurons.
+         # So we want [Neurons, WeightFeatures].
+         # Weight is [Out, In].
+         # So we want [Out, In].
+         # Wait, logic in Conv was: return w.reshape(out_ch, -1).T
+         # Conv W: [Out, In, k, k]. 
+         # Reshape: [Out, FlatIn].
+         # .T => [FlatIn, Out].
+         #
+         # If `extract_and_crystallize` does:
+         # current_points_count = layer_weights.shape[0]
+         # It expects [Points, Features].
+         #
+         # If Conv returns [FlatIn, Out]. shape[0] is FlatIn.
+         # This means Points = Input Features? 
+         # Let's check Gpt2 extraction:
+         # q = ... .T  (Shape: [Hidden, Hidden])?
+         # GPT2 weight: [768, 2304]. 
+         # .T => [2304, 768].
+         # 2304 Points? (3 * 768 Neurons). Yes.
+         # So for Linear [Out, In]. We want [Out, In]. 
+         # So we return Weight Matrix as is [Out, In]?
+         # Or do we Transpose?
+         # If we return [Out, In], then shape[0] = Out (Neurons).
+         # Conv returns [FlatIn, Out]. shape[0] = FlatIn.
+         # This seems inconsistent or I am misinterpreting `Conv`.
+         #
+         # Re-reading Conv: 
+         # w.reshape(out_ch, -1).T  -> [FlatIn, Out].
+         # shape[0] = FlatIn.
+         # So for Conv, the "Points" are the INPUT PIXELS/FEATURES?
+         #
+         # Let's check GPT2 again.
+         # q = sa.q.weight.detach().numpy().T
+         # Weight: [Hidden, Hidden]. (Linear layer weight is [Out, In]).
+         # .T => [In, Out].
+         # shape[0] = In.
+         # So the CRYSTAL visualizes the INPUT DIMENSIONS, not the NEURONS?
+         #
+         # If I want to visualize Neurons (Out), I should return [Out, In].
+         # But the code seems to prefer [In, Out].
+         # Let's follow the pattern: Return [In, Out].
+         # Linear Weight: [Out, In].
+         # Return Weight.T -> [In, Out].
+         return block.weight.detach().numpy().T
 
     return None
 

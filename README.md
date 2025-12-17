@@ -15,11 +15,16 @@ When you look at a Prismata crystal, you are not looking at random art. You are 
     *   **Clusters:** Groups of neurons that have learned similar features.
     *   **Layers:** The vertical progression represents the depth of the network (Input at the bottom, Output at the top).
     *   **Shape:** A "helix" suggests the model rotates data as it processes it. A "block" suggests rigid, parallel processing.
-
+    
 ### 2. Activation Crystals ("The Thought")
 *   **What it is:** A map of the model's **Activations** (short-term memory) as it processes a specific input.
 *   **How it works:** We feed text (e.g., *"The quick brown fox"*) into the model and record the firing state of every neuron at every millisecond.
 *   **What it means:** You are seeing the **trajectory of a thought**. The path the data takes as it flows through the neural pathways, transforming from raw text into abstract understanding.
+
+### ⚠️ Data Fidelity Disclaimer
+While Prismata strives for mathematical accuracy, some ultra-large scale or restricted models in this gallery (specifically **DeepSeek-V3** and **AlexNet**) are **Architectural Simulations**.
+*   **Real Weights:** Models like GPT-2, BERT, and ResNet are generated from the actual pre-trained Hugging Face weights.
+*   **Simulations:** Models like DeepSeek (671B params) use "Mock" weights to verify the *topology* (e.g., Sparsity/MoE structure) without requiring impractical downloads. These visualize the *concept* of the architecture rather than its trained personality.
 
 ---
 

@@ -1,5 +1,53 @@
 [
   {
+    "id": "gemini3",
+    "name": "Gemini 3.0 (Omni)",
+    "year": 2026,
+    "era": "The Omni Era",
+    "type": "Multimodal",
+    "desc": "The first truly native Omni-model. Sees, hears, and speaks as one. (Simulation)",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "The Weaver",
+        "file": "crystals/gemini3/structure_layers.ply",
+        "desc": "Text, Audio, and Video layers woven together."
+      }
+    ]
+  },
+  {
+    "id": "deepseek",
+    "name": "DeepSeek-V3 (MoE)",
+    "year": 2025,
+    "era": "The Sparse Era",
+    "type": "MoE",
+    "desc": "A massive 671B parameter Mixture-of-Experts model. Famous for extreme efficiency via sparsity.",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "The Sparse Cloud",
+        "file": "crystals/deepseek/structure_layers.ply",
+        "desc": "DeepSeek-V3 / R1 Structure. Visualizing the massive sparsity (MoE)."
+      }
+    ]
+  },
+  {
+    "id": "gpt4",
+    "name": "GPT-4",
+    "year": 2023,
+    "era": "The Scale Era",
+    "type": "MoE",
+    "desc": "The model that changed the world. Massive scale, massive capability. (Simulation)",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "The Colossus",
+        "file": "crystals/gpt4/structure_layers.ply",
+        "desc": "A towering 120-layer MoE helix."
+      }
+    ]
+  },
+  {
     "id": "smollm",
     "name": "SmolLM2 (360M)",
     "year": 2025,
@@ -196,6 +244,37 @@
     ]
   },
   {
+    "id": "vgg16",
+    "name": "VGG-16",
+    "year": 2014,
+    "era": "The Deep Tower",
+    "type": "CNN",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "The Monolith",
+        "file": "crystals/vgg16/structure_layers.ply",
+        "desc": "A rigid tower of convolutional blocks."
+      }
+    ]
+  },
+  {
+    "id": "inception",
+    "name": "GoogleNet (Inception)",
+    "year": 2014,
+    "era": "The Branching Path",
+    "type": "CNN",
+    "desc": "Wide, parallel processing. Introducing complexity through the 'Inception Module'.",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "The Lattice",
+        "file": "crystals/inception/structure_layers.ply",
+        "desc": "Parallel branches crystallizing together."
+      }
+    ]
+  },
+  {
     "id": "alexnet",
     "name": "AlexNet",
     "year": 2012,
@@ -224,6 +303,22 @@
         "name": "The First Spark",
         "file": "crystals/lenet/structure.ply",
         "desc": "Hand-crafted layers. Simple, effective, beautiful."
+      }
+    ]
+  },
+  {
+    "id": "perceptron",
+    "name": "The Perceptron",
+    "year": 1958,
+    "era": "Prehistory",
+    "type": "Linear",
+    "desc": "The single neuron that started it all. Frank Rosenblatt's Mark I Perceptron.",
+    "crystals": [
+      {
+        "id": "struct",
+        "name": "The Atom",
+        "file": "crystals/perceptron/structure.ply",
+        "desc": "A single linear plane. The limit of 1-layer computing."
       }
     ]
   }

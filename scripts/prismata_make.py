@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 from plyfile import PlyData, PlyElement
 from transformers import AutoModel
 
-from lib.models import SimpleAlexNet, get_model_structure
+from lib.models import SimpleAlexNet, SimpleDeepSeekMOE, SimpleVGG16, SimplePerceptron, SimpleInception, SimpleGPT4, SimpleGemini3, get_model_structure
 from lib.extractors import extract_weights, get_activations
 from lib.rendering import get_color
 
@@ -15,6 +15,24 @@ def extract_and_crystallize(model_name='bert-base-uncased', step=2, mode='layers
         if model_name == 'alexnet':
             model = SimpleAlexNet()
             print("   ⚠️  Using manually defined AlexNet (Untrained/Random Weights) as torchvision is unavailable.")
+        elif model_name == 'deepseek':
+            model = SimpleDeepSeekMOE()
+            print("   ⚠️  Using manually defined DeepSeek-V3 MoE (Sparse Mock) to visualize MoE Structure without 600GB download.")
+        elif model_name == 'vgg16':
+            model = SimpleVGG16()
+            print("   ⚠️  Using manually defined VGG-16 (Untrained).")
+        elif model_name == 'perceptron':
+            model = SimplePerceptron()
+            print("   ⚠️  Using manually defined Perceptron (1958).")
+        elif model_name == 'inception':
+            model = SimpleInception()
+            print("   ⚠️  Using manually defined Inception-v1/GoogLeNet (Mock).")
+        elif model_name == 'gpt4':
+            model = SimpleGPT4()
+            print("   ⚠️  Using manually defined GPT-4 (Mock MoE).")
+        elif model_name == 'gemini3':
+            model = SimpleGemini3()
+            print("   ⚠️  Using manually defined Gemini 3.0 (Mock Omni).")
         else:
             model = AutoModel.from_pretrained(model_name)
     except Exception as e:
