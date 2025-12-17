@@ -130,6 +130,32 @@ body {
     color: var(--color-primary);
 }
 
+@media (max-width: 600px) {
+    .gallery-header {
+        padding: 0 10px;
+    }
+
+    .logo-text h1 {
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        white-space: nowrap;
+    }
+
+    .status-indicator {
+        gap: 2px;
+    }
+
+    .status-indicator .minimal-btn {
+        padding: 4px;
+        font-size: 0.55rem;
+        margin-right: 5px;
+    }
+
+    .icon-btn {
+        transform: scale(0.9);
+        margin-right: 5px;
+    }
+}
 .status-dot {
     width: 8px;
     height: 8px;
@@ -1027,6 +1053,56 @@ input:checked+.slider:before {
     text-align: center;
 }
 
+/* Mobile Timeline Tweaks */
+@media (max-width: 600px) {
+    #timeline-year {
+        font-size: 4rem;
+        top: -40px;
+        left: 0;
+    }
+
+    #timeline-title {
+        font-size: 1.5rem;
+    }
+
+    #timeline-desc {
+        font-size: 0.9rem;
+        padding: 10px;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+
+    .timeline-active-info {
+        top: 15%;
+        left: 5%;
+        right: 5%;
+        max-width: none;
+    }
+
+    .timeline-track-container {
+        padding: 5px;
+    }
+
+    .timeline-track {
+        gap: 15px;
+        padding: 10px;
+    }
+
+    .nav-arrow {
+        width: 30px;
+        height: 30px;
+    }
+
+    .node-year {
+        font-size: 0.7rem;
+    }
+
+    .node-label {
+        font-size: 0.6rem;
+        display: none;
+        /* Hide labels on tiny screens to save space? */
+    }
+}
 .icon-btn {
     background: transparent;
     border: none;

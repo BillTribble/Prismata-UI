@@ -253,7 +253,25 @@ export class LightCycleArena {
     return true;
   }
 
-  // ... turnBike same ...
+  turnBike(bike) {
+    if (Math.random() < 0.05) return; // Small chance to ignore (stubbornness/lag simulation)
+    const validTurns = [];
+    const right = new THREE.Vector3(bike.dir.z, 0, -bike.dir.x);
+    const left = new THREE.Vector3(-bike.dir.z, 0, bike.dir.x);
+
+    // Check safety of turns
+    const lookAhead = 15; // Look ahead distance for turns
+    if (this.isPositionSafe(bike.mesh.position.clone().addScaledVector(right, lookAhead), bike)) validTurns.push(right);
+    if (this.isPositionSafe(bike.mesh.position.clone().addScaledVector(left, lookAhead), bike)) validTurns.push(left);
+
+    if (validTurns.length > 0) {
+      // Pick random valid turn
+      const turn = validTurns[Math.floor(Math.random() * validTurns.length)];
+      bike.dir.copy(turn);
+      this.startNewTrailSegment(bike);
+      bike.turnTimer = 20 + Math.random() * 30; // Cooldown
+    }
+  }
 
   explode(bike, killer) {
     if (bike.isDead) return;

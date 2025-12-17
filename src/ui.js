@@ -31,10 +31,12 @@ const uiElements = {
 };
 
 // State
+// State
 let isCompareMode = false;
 let activeSlot = 'main'; // 'main' or 'compare'
 let mainViewer = null;
 let compareViewer = null;
+let infoVisible = true;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -316,7 +318,7 @@ function setupControls() {
 
   if (btnToggleInfo) {
     document.getElementById('btn-toggle-info').addEventListener('click', () => {
-      const panels = document.querySelectorAll('.artifact-details, .gallery-nav');
+      const panels = document.querySelectorAll('.artifact-details');
       // Assuming infoVisible is defined globally or in a scope accessible here
       // If not, this would need to be initialized, e.g., `let infoVisible = true;`
       // For now, faithfully applying the change as provided.
