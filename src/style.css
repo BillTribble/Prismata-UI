@@ -808,7 +808,7 @@ input:checked+.slider:before {
 .color-legend {
     position: absolute;
     bottom: 40px;
-        left: 320px;
+    left: 320px;
         /* Right of Sidebar */
         right: auto;
         display: flex;
@@ -824,6 +824,7 @@ input:checked+.slider:before {
         backdrop-filter: blur(4px);
     transition: left 0.3s ease;
 }
+
 .pulse-btn {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -848,6 +849,7 @@ input:checked+.slider:before {
     text-shadow: 0 0 5px #00f3ff;
     box-shadow: 0 0 5px rgba(0, 243, 255, 0.2);
 }
+
 @media (max-width: 900px) {
     .color-legend {
         left: 20px;
@@ -855,22 +857,20 @@ input:checked+.slider:before {
         /* Middle-ish */
     }
 }
-    
-        .gradient-bar {
-            width: 6px;
-            height: 80px;
-            /* HSV Gradient: Red(Input) -> Violet(Output) */
-            background: linear-gradient(to top,
-                    #ff0000 0%,
-                    #ffff00 20%,
-                    #00ff00 40%,
-                    #00ffff 60%,
-                    #0000ff 80%,
-                    #ff00ff 100%);
-            border-radius: 3px;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-        }
-    
+.gradient-bar {
+    width: 6px;
+    height: 80px;
+    /* HSV Gradient: Red(Input) -> Violet(Output) */
+    background: linear-gradient(to top,
+            #ff0000 0%,
+            #ffff00 20%,
+            #00ff00 40%,
+            #00ffff 60%,
+            #0000ff 80%,
+            #ff00ff 100%);
+    border-radius: 3px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
         .legend-label {
             font-size: 0.5rem;
             color: var(--color-primary);
@@ -1220,4 +1220,11 @@ input:checked+.slider:before {
 .score-status.dead {
     color: #ff0055;
     opacity: 1;
+}
+
+/* Utility */
+.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
