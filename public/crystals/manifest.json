@@ -31,6 +31,7 @@
       }
     ]
   },
+
   {
     "id": "gpt4",
     "name": "GPT-4",
@@ -111,9 +112,9 @@
     "crystals": [
       {
         "id": "struct",
-        "name": "Compressed Knowledge",
-        "file": "crystals/tinyllama/activation_consciousness.ply",
-        "desc": "'Consciousness is a strange loop'"
+        "name": "The Dense Spiral",
+        "file": "crystals/tinyllama/structure_layers.ply",
+        "desc": "Compact brilliance. 22 layers of dense logic."
       }
     ]
   },
