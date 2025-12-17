@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ArchiveEnvironment } from './ArchiveEnvironment.js';
 import { FirstPersonController } from './FirstPersonController.js';
+import { DoomManager } from './DoomManager.js';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
 
 class ArchiveManager {
@@ -82,6 +83,10 @@ class ArchiveManager {
 
         if (this.player) this.player.unlock();
 
+        if (this.doomManager) {
+            this.doomManager.deactivate();
+        }
+
         // Clean up WebGL to save memory
         this.cleanup();
 
@@ -95,6 +100,7 @@ class ArchiveManager {
 
         this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 500);
         this.camera.position.set(0, 10, 50);
+        this.scene.add(this.camera); // REQUIRED for weapon to be visible
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -105,9 +111,13 @@ class ArchiveManager {
         this.environment.build(Math.max(200, this.models.length * 50));
 
         this.player = new FirstPersonController(this.camera, document.body); // Bind to body for pointer lock
+        this.doomManager = new DoomManager(this.scene, this.camera);
 
         // Unlock Listener to Show Menu
         this.player.controls.addEventListener('unlock', () => {
+            // DO NOT show pause menu if Doom Mode is Active
+            if (this.doomManager && this.doomManager.active) return;
+
             const ui = document.getElementById('archive-ui');
             if (ui) {
                 ui.style.opacity = 1;
@@ -128,6 +138,12 @@ class ArchiveManager {
                     this.exitArchive();
                 });
             }
+        });
+
+        // Lock Listener to Auto-Hide UI (Fix for Doom Mode transition)
+        this.player.controls.addEventListener('lock', () => {
+            const ui = document.getElementById('archive-ui');
+            if (ui) ui.style.opacity = 0;
         });
 
         // Add Placeholders for Models
@@ -210,12 +226,19 @@ class ArchiveManager {
         }
         this.scene = null;
         this.player = null;
+        this.raycaster = null; // Clean up raycaster
 
         // Remove Listener
         if (this.resizeHandler) {
             window.removeEventListener('resize', this.resizeHandler);
             this.resizeHandler = null;
         }
+        // Remove keydown listener for 'p'
+        window.removeEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'p') {
+                if (this.doomManager) this.doomManager.activate();
+            }
+        });
     }
 
     animate() {
@@ -226,6 +249,24 @@ class ArchiveManager {
         if (this.player) {
             this.player.update(delta);
             this.checkProximity();
+
+            // CHECK DOOM TRIGGER
+            // Platform at (10, 0, 20). Player radius ~3.
+            const p = this.camera.position;
+            // Check distance
+            if (Math.abs(p.x - 10) < 4 && Math.abs(p.z - 20) < 4) {
+                if (!this.doomManager.active) {
+                    this.doomManager.activate();
+                }
+            }
+        }
+
+        if (this.doomManager) {
+            try {
+                this.doomManager.update(delta);
+            } catch (e) {
+                console.error("DoomManager update error:", e);
+            }
         }
 
         if (this.renderer && this.scene && this.camera) {
@@ -264,6 +305,8 @@ class ArchiveManager {
         const loader = new PLYLoader();
 
         loader.load('./' + file, (geometry) => {
+            if (!this.scene) return; // Prevent race condition if cleaned up
+
             geometry.computeVertexNormals();
             // Center geometry
             geometry.center();

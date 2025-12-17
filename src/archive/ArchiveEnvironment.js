@@ -39,6 +39,44 @@ export class ArchiveEnvironment {
             this.scene.add(strip);
         }
 
+        // Secret Platform (DOOM MODE TRIGGER)
+        // Closer to start (Player starts at 0, 0, 50). Let's put it at (10, 0, 20)
+        const secretGeo = new THREE.PlaneGeometry(5, 5);
+        const secretMat = new THREE.MeshStandardMaterial({
+            color: 0xff0000,
+            emissive: 0xff0000,
+            emissiveIntensity: 2.0,
+            roughness: 0.2
+        });
+        const secretPlatform = new THREE.Mesh(secretGeo, secretMat);
+        secretPlatform.rotation.x = -Math.PI / 2;
+        secretPlatform.position.set(10, 0.2, 20);
+        secretPlatform.name = 'SECRET_DOOM_PLATFORM';
+        this.scene.add(secretPlatform);
+
+        // Rotating Doom Icon (Floating above platform)
+        const iconGeo = new THREE.BoxGeometry(2, 2, 2);
+        const iconMat = new THREE.MeshStandardMaterial({
+            color: 0x000000,
+            emissive: 0xff0055,
+            emissiveIntensity: 3.0,
+            wireframe: true
+        });
+        const icon = new THREE.Mesh(iconGeo, iconMat);
+        icon.position.set(10, 3, 20);
+
+        // Simple rotation animation
+        icon.onBeforeRender = () => {
+            icon.rotation.x += 0.02;
+            icon.rotation.y += 0.03;
+        };
+        this.scene.add(icon);
+
+        // Secret Light
+        const secretLight = new THREE.PointLight(0xff0000, 2.0, 20);
+        secretLight.position.set(10, 5, 20);
+        this.scene.add(secretLight);
+
         // Fog (Reduced density to prevent color fading)
         this.scene.fog = new THREE.FogExp2(0x000000, 0.002);
 
