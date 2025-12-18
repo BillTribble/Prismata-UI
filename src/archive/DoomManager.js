@@ -85,7 +85,7 @@ class GlitchEnemy {
         // Non-wraiths will hunt the player if they are close
         if (!this.isWraith && playerPos) {
             const distSq = this.mesh.position.distanceToSquared(playerPos);
-            if (distSq < 400) { // 20 units squared
+            if (distSq < 2500) { // 50 units squared (Aggro Range UP)
                 targetPos = playerPos;
             }
         }
@@ -175,6 +175,8 @@ export class DoomManager {
         this.gameInterval = null;
         this.spawnInterval = null;
         this.pickupInterval = null;
+        this.enemiesToSpawn = 0; // Wave Logic
+        this.waveInProgress = false;
         this.lastHUDState = {}; // Performance: Track state to minimize DOM updates
 
         // Weapons
@@ -202,6 +204,7 @@ export class DoomManager {
         // UI Startup
         this.createHUD();
         this.createWeaponMesh();
+        this.initModelHealthBars(); // NEW: Attach Health Bars
 
         // Input
         this.clickParams = { handler: (e) => this.shoot(e) };
@@ -350,23 +353,52 @@ export class DoomManager {
             }
         });
         this.particles = [];
+
+        // Clean Crystal Health Bars
+        if (this.crystals) {
+            this.crystals.forEach(c => {
+                if (c.sprite) c.mesh.remove(c.sprite);
+            });
+            this.crystals = [];
+        }
     }
 
     startWave() {
         if (this.spawnInterval) clearInterval(this.spawnInterval);
         if (this.wave > 5) { this.triggerWin(); return; }
 
-        console.log(`Starting Wave ${this.wave}`);
-        const spawnRate = Math.max(500, 3000 - (this.wave * 200));
+        this.waveInProgress = true;
+        this.enemiesToSpawn = 10 + (this.wave * 5); // 15, 20, 25...
+
+        console.log(`Starting Wave ${this.wave}, Enemies: ${this.enemiesToSpawn}`);
+        const spawnRate = Math.max(500, 2500 - (this.wave * 300));
+
+        // SHOW WAVE TITLE
+        const hud = document.getElementById('doom-hud');
+        if (hud) {
+            const title = document.createElement('div');
+            title.innerText = `WAVE ${this.wave}`;
+            title.style.cssText = `position:absolute; top:30%; left:50%; transform:translate(-50%, -50%); 
+                font-size:80px; color:#ff0033; font-weight:bold; text-shadow:0 0 20px red; opacity:0; transition:opacity 0.5s;`;
+            hud.appendChild(title);
+            setTimeout(() => title.style.opacity = 1, 100);
+            setTimeout(() => { title.style.opacity = 0; setTimeout(() => title.remove(), 500); }, 3000);
+        }
 
         this.spawnInterval = setInterval(() => {
             if (!this.active || this.isGameOver) return;
-            this.spawnEnemy();
+            if (this.enemiesToSpawn > 0) {
+                if (this.enemies.length < 15) { // Max concurrent
+                    this.spawnEnemy();
+                }
+            }
         }, spawnRate);
+
+        this.updateHUD();
     }
 
     spawnEnemy() {
-        if (this.enemies.length > 40) return;
+        if (this.enemiesToSpawn <= 0) return;
 
         // 1. Get ALL valid targets
         const targets = [];
@@ -399,12 +431,13 @@ export class DoomManager {
 
         const enemy = new GlitchEnemy(this.scene, new THREE.Vector3(spawnX, 4, spawnZ), target, type);
 
-        // WAVE SCALING
         const multiplier = 1 + (this.wave - 1) * 0.15;
         enemy.life *= multiplier;
         enemy.speed *= (1 + (this.wave - 1) * 0.1);
 
         this.enemies.push(enemy);
+        this.enemiesToSpawn--;
+        this.updateHUD();
     }
 
     spawnDrop(pos) {
@@ -514,6 +547,7 @@ export class DoomManager {
         if (this.hud) this.hud.remove();
         this.createHUD();
         this.updateHUD();
+        this.initModelHealthBars(); // Re-initialize bars on reset
         this.playMusic();
         this.startWave();
         this.startPickups();
@@ -527,8 +561,19 @@ export class DoomManager {
             this.audioCtx.resume();
         }
 
+        // WAVE CHECK
+        if (this.waveInProgress && this.enemiesToSpawn === 0 && this.enemies.length === 0) {
+            this.waveInProgress = false;
+            console.log("Wave Complete!");
+            this.wave++;
+            this.playSound(600, 'sine', 1.0, 0.5);
+            setTimeout(() => this.startWave(), 3000); // 3s Intermission
+        }
+
+        this.updateModelHealthBars(); // NEW: Update Crystal Health
+
         try {
-            // Enemies
+            // ... (rest of update)
             for (let i = this.enemies.length - 1; i >= 0; i--) {
                 const e = this.enemies[i];
                 const result = e.update(delta, this.camera.position);
@@ -964,6 +1009,20 @@ export class DoomManager {
             this.lastHUDState.wave = wave;
         }
 
+        // Enemies Left
+        const left = this.enemies.length + this.enemiesToSpawn;
+        if (this.lastHUDState.left !== left) {
+            const el = document.getElementById('doom-left');
+            if (el) el.innerText = left;
+            else if (this.hud) {
+                // Inject if missing (lazy init)
+                const div = document.createElement('div');
+                div.innerHTML = `ENEMIES: <span id="doom-left">${left}</span>`;
+                this.hud.children[0].appendChild(div);
+            }
+            this.lastHUDState.left = left;
+        }
+
         const ammoStr = ammo === -1 ? "∞" : ammo;
         const stateStr = `${weaponName}_${ammoStr}`;
         if (this.lastHUDState.weaponState !== stateStr) {
@@ -1024,6 +1083,63 @@ export class DoomManager {
         this.shotgunMesh.visible = (w.name === "SHOTGUN");
         this.launcherMesh.visible = (w.name === "LAUNCHER");
         this.muzzleLight.color.setHex(w.color);
+    }
+
+    initModelHealthBars() {
+        this.crystals = [];
+        this.scene.traverse(obj => {
+            if (obj.isPoints && obj.visible) {
+                if (obj.userData.health === undefined) obj.userData.health = 100;
+
+                // Remove old bar if exists
+                const oldBar = obj.getObjectByName('healthBar');
+                if (oldBar) obj.remove(oldBar);
+
+                // Create Sprite Bar
+                const canvas = document.createElement('canvas'); // Create once? No, unique per crystal for potential future optimization, but actually they can share texture? 
+                // Actually distinct textures are needed if we want distinct healths without uniforms. CanvasTexture is easy.
+                canvas.width = 64; canvas.height = 8;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(0, 0, 64, 8);
+
+                const tex = new THREE.CanvasTexture(canvas);
+                const mat = new THREE.SpriteMaterial({ map: tex, transparent: true });
+                const sprite = new THREE.Sprite(mat);
+                sprite.name = 'healthBar';
+                sprite.scale.set(10, 1.25, 1);
+                sprite.position.y = 8; // Above model
+                obj.add(sprite);
+
+                this.crystals.push({ mesh: obj, sprite: sprite, tex: tex, ctx: ctx, canvas: canvas });
+            }
+        });
+    }
+
+    updateModelHealthBars() {
+        if (!this.crystals) return;
+
+        this.crystals.forEach(c => {
+            const hp = c.mesh.userData.health;
+            if (hp < 100) {
+                // Redraw texture if HP changed
+                // Optimization: Only redraw if dirty? For now, redraw every frame is fine for < 10 items.
+                // Actually lets check against lastHp if we can, but storing lastHp on object is cleaner.
+                if (c.lastHp !== hp) {
+                    const width = Math.max(0, (hp / 100) * 64);
+                    c.ctx.clearRect(0, 0, 64, 8);
+                    c.ctx.fillStyle = '#330000'; // Background
+                    c.ctx.fillRect(0, 0, 64, 8);
+                    c.ctx.fillStyle = hp < 30 ? '#ff0000' : '#00ff00';
+                    c.ctx.fillRect(0, 0, width, 8);
+                    c.tex.needsUpdate = true;
+                    c.lastHp = hp;
+                    c.sprite.visible = true;
+                }
+            } else {
+                c.sprite.visible = false; // Hide if full health
+            }
+        });
     }
 
     handleKeys(e) {
