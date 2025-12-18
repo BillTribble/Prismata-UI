@@ -50,7 +50,7 @@
                     <button id="btn-about" class="minimal-btn">ABOUT</button>
                     <button id="btn-toggle-info" class="minimal-btn">HIDE INFO</button>
                     <span class="status-dot"></span>
-                    <span class="status-text">SYSTEM ONLINE</span>
+                    <span id="fps-counter" class="fps-value">-- FPS</span>
                 </div>
             </header>
 
@@ -143,11 +143,124 @@
 
                 <!-- Shared Controls (Bottom) -->
                 <div class="glass-panel controls-panel">
-                    <div class="controls">
-                        <button id="btn-spin" class="cyber-btn active">AUTO-ROTATE</button>
-                        <button id="btn-reset" class="cyber-btn">RESET VIEW</button>
+                    <div class="controls-column">
+                        <!-- Row 0: Actions -->
+                        <div class="control-row">
+                            <button id="btn-spin" class="cyber-btn active">AUTO-ROTATE</button>
+                            <button id="btn-pan" class="cyber-btn active">AUTO-PAN</button>
+                            <button id="btn-reset" class="cyber-btn">RESET VIEW</button>
+                        </div>
+
+                        <!-- Sub-Section Toggles -->
+                        <div class="tab-row">
+                            <button id="btn-movement" class="accordion-toggle">
+                                MOVEMENT
+                                <svg class="arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                    <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                            <button id="btn-perf" class="accordion-toggle">
+                                PERFORMANCE
+                                <svg class="arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                    <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Movement Section -->
+                        <div id="movement-controls" class="accordion-content">
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="point-size-slider">NODE SIZE</label>
+                                    <div class="slider-container">
+                                        <input type="range" id="point-size-slider" min="0.001" max="0.1" step="0.001"
+                                            value="0.04" />
+                                        <div id="size-ghost" class="ghost-thumb hidden"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="lfo-slider">LFO</label>
+                                    <input type="range" id="lfo-slider" min="0" max="1.0" step="0.01" value="0.2" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="lfo-speed">SPD</label>
+                                    <input type="range" id="lfo-speed" min="0.1" max="5.0" step="0.1" value="3.5" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="pan-speed">PAN SPD</label>
+                                    <input type="range" id="pan-speed" min="0" max="1.0" step="0.01" value="0.1" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="view-height">HEIGHT</label>
+                                    <input type="range" id="view-height" min="-20" max="40" step="0.5" value="0" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="rot-speed">ROT SPD</label>
+                                    <input type="range" id="rot-speed" min="0.1" max="5.0" step="0.1" value="1.25" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label>PAN RANGE</label>
+                                    <div class="dual-range-container">
+                                        <div class="range-track" id="pan-track"></div>
+                                        <input type="range" id="pan-limit-min" min="-20" max="40" step="1" value="3" />
+                                        <input type="range" id="pan-limit-max" min="-20" max="40" step="1" value="9" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PERF Section -->
+                        <div id="perf-controls" class="accordion-content">
+                            <!-- Distances -->
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="line-dist-slider">LINE DIST</label>
+                                    <input type="range" id="line-dist-slider" min="0" max="100" step="1" value="20" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="node-dist-slider">NODE DIST</label>
+                                    <input type="range" id="node-dist-slider" min="0" max="100" step="1" value="20" />
+                                </div>
+                            </div>
+                            <!-- Densities -->
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="line-density-slider">LINE DENS</label>
+                                    <input type="range" id="line-density-slider" min="0" max="100" step="1"
+                                        value="100" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="node-density-slider">NODE DENS</label>
+                                    <input type="range" id="node-density-slider" min="0" max="100" step="1"
+                                        value="100" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="summarize-thin">THINNING</label>
+                                    <input type="range" id="summarize-thin" min="0" max="1.0" step="0.05" value="0.6" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="xor-density-slider">% XOR VISIBLE</label>
+                                    <input type="range" id="xor-density-slider" min="0" max="100" step="1" value="60" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
 
                 <!-- Loading Overlay -->
                 <div id="loader" class="loader-overlay hidden">
@@ -200,7 +313,8 @@
                             <h3 style="color:var(--color-secondary); font-size:0.9rem;">PREVISUALIZE CUSTOM CRYSTAL</h3>
                             <p style="font-size:0.8rem; margin-bottom:10px; color:#ccc;">Upload a generated
                                 <code>.ply</code> file
-                                to view it instantly.</p>
+                                to view it instantly.
+                            </p>
                             <label class="minimal-btn" style="display:inline-block; cursor:pointer; padding: 8px 16px;">
                                 UPLOAD .PLY
                                 <input type="file" id="file-upload" accept=".ply" style="display:none;">

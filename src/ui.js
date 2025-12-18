@@ -37,12 +37,42 @@ let activeSlot = 'main'; // 'main' or 'compare'
 let mainViewer = null;
 let compareViewer = null;
 let infoVisible = true;
+let autoFPSEnabled = true;
+window.targetFPS = 24;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. Init Viewers
   mainViewer = new CrystalViewer('view-main');
-  compareViewer = new CrystalViewer('view-compare'); 
+  compareViewer = new CrystalViewer('view-compare');
+
+  // Ghost Fader Logic
+  const ghost = document.getElementById('size-ghost');
+  const sizeSlider = document.getElementById('point-size-slider');
+
+  if (ghost && sizeSlider) {
+    mainViewer.onUpdateUI = (currentSize) => {
+      const min = parseFloat(sizeSlider.min);
+      const max = parseFloat(sizeSlider.max);
+
+      // Ensure max is correct (it might change in DOM)
+      // If necessary, we can hardcode 0.1 for now if DOM didn't update before this calls 
+      // but user interaction drives this so DOM is usually ready. 
+
+      const percent = ((currentSize - min) / (max - min)) * 100;
+
+      // Clamp visuals
+      let p = Math.max(0, Math.min(100, percent));
+      ghost.style.left = `${p}%`;
+
+      // Show/Hide based on difference from base
+      if (Math.abs(currentSize - mainViewer.baseSize) > 0.0001) {
+        ghost.classList.remove('hidden');
+      } else {
+        ghost.classList.add('hidden');
+      }
+    };
+  }
 
   // 2. Load Gallery
   await loadGallery();
@@ -153,12 +183,12 @@ function setActiveSlot(slot) {
     panelA.style.boxShadow = '0 0 15px rgba(0, 243, 255, 0.2)';
     panelB.style.borderColor = 'rgba(0, 243, 255, 0.2)';
     panelB.style.boxShadow = 'none';
-    } else {
-      panelB.style.borderColor = '#00f3ff';
-      panelB.style.boxShadow = '0 0 15px rgba(0, 243, 255, 0.2)';
-      panelA.style.borderColor = 'rgba(0, 243, 255, 0.2)';
-      panelA.style.boxShadow = 'none';
-    }
+  } else {
+    panelB.style.borderColor = '#00f3ff';
+    panelB.style.boxShadow = '0 0 15px rgba(0, 243, 255, 0.2)';
+    panelA.style.borderColor = 'rgba(0, 243, 255, 0.2)';
+    panelA.style.boxShadow = 'none';
+  }
 }
 
 async function loadGallery() {
@@ -170,59 +200,59 @@ async function loadGallery() {
     // Sort by Year (Descending: Recent -> Oldest)
     models.sort((a, b) => b.year - a.year);
 
-      // Setup Tags based on loaded models
-      setupTags(models);
+    // Setup Tags based on loaded models
+    setupTags(models);
 
-      models.forEach((model, index) => {
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'model-group';
-        // Open grouping for recent models by default? Or just first?
-          if (index === 0) groupDiv.classList.add('active');
+    models.forEach((model, index) => {
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'model-group';
+      // Open grouping for recent models by default? Or just first?
+      if (index === 0) groupDiv.classList.add('active');
 
-          const groupTitle = document.createElement('div');
-          groupTitle.className = 'model-title';
-        // Year | Name
-        groupTitle.innerHTML = `<span style="opacity:0.6; font-family:monospace; margin-right:8px;">${model.year}</span> ${model.name}`;
+      const groupTitle = document.createElement('div');
+      groupTitle.className = 'model-title';
+      // Year | Name
+      groupTitle.innerHTML = `<span style="opacity:0.6; font-family:monospace; margin-right:8px;">${model.year}</span> ${model.name}`;
 
-          groupTitle.addEventListener('click', () => {
-            groupDiv.classList.toggle('active');
-          });
-          groupDiv.appendChild(groupTitle);
+      groupTitle.addEventListener('click', () => {
+        groupDiv.classList.toggle('active');
+      });
+      groupDiv.appendChild(groupTitle);
 
-          const contentDiv = document.createElement('div');
-          contentDiv.className = 'group-content';
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'group-content';
 
-          model.crystals.forEach(crystal => {
-            const item = document.createElement('div');
-            item.className = 'crystal-item';
-            item.dataset.url = `./${crystal.file}`;
-            item.dataset.name = crystal.name;
-            item.dataset.desc = crystal.desc;
-            item.dataset.type = model.type;
-            item.dataset.year = model.year;
-            item.dataset.modelName = model.name; // Pass Model Name
-            item.dataset.modelDesc = model.desc;
-            item.dataset.modelId = model.id;
+      model.crystals.forEach(crystal => {
+        const item = document.createElement('div');
+        item.className = 'crystal-item';
+        item.dataset.url = `./${crystal.file}`;
+        item.dataset.name = crystal.name;
+        item.dataset.desc = crystal.desc;
+        item.dataset.type = model.type;
+        item.dataset.year = model.year;
+        item.dataset.modelName = model.name; // Pass Model Name
+        item.dataset.modelDesc = model.desc;
+        item.dataset.modelId = model.id;
 
-            item.innerHTML = `
+        item.innerHTML = `
                     <span class="item-name">${crystal.name}</span>
                     <span class="item-desc">${crystal.desc.substring(0, 35)}...</span>
                 `;
 
-              item.addEventListener('click', () => {
-                document.querySelectorAll('.crystal-item').forEach(el => el.classList.remove('active'));
-                item.classList.add('active');
-                handleLoadCrystal(item.dataset, activeSlot);
-                // Close mobile menu if open
-                document.querySelector('.gallery-nav').classList.remove('active');
-                });
-
-              contentDiv.appendChild(item);
-            });
-
-          groupDiv.appendChild(contentDiv);
-          navList.appendChild(groupDiv);
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.crystal-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          handleLoadCrystal(item.dataset, activeSlot);
+          // Close mobile menu if open
+          document.querySelector('.gallery-nav').classList.remove('active');
         });
+
+        contentDiv.appendChild(item);
+      });
+
+      groupDiv.appendChild(contentDiv);
+      navList.appendChild(groupDiv);
+    });
 
     // Auto-select first item
     setTimeout(() => {
@@ -230,10 +260,10 @@ async function loadGallery() {
       if (firstItem) firstItem.click();
     }, 100);
 
-    } catch (err) {
-      console.error("Failed to load manifest:", err);
-      navList.innerHTML = `<div style="color:red; padding:1rem;">ERROR CONNECTING TO ARCHIVE<br>${err.message}</div>`;
-    }
+  } catch (err) {
+    console.error("Failed to load manifest:", err);
+    navList.innerHTML = `<div style="color:red; padding:1rem;">ERROR CONNECTING TO ARCHIVE<br>${err.message}</div>`;
+  }
 }
 
 async function handleLoadCrystal(data, slot) {
@@ -247,29 +277,29 @@ async function handleLoadCrystal(data, slot) {
   ui.type.textContent = data.type;
 
   try {
-      const stats = await viewer.loadCrystal(data.url);
+    const stats = await viewer.loadCrystal(data.url);
 
-      ui.nodes.textContent = stats.nodes.toLocaleString();
-      ui.links.textContent = stats.links.toLocaleString();
+    ui.nodes.textContent = stats.nodes.toLocaleString();
+    ui.links.textContent = stats.links.toLocaleString();
 
-      let infoText = "";
-      try {
-        const res = await fetch(`./crystals/${data.modelId}/INFO.md`);
-        if (res.ok) {
-          const text = await res.text();
-          // Vite fallback protection
-          if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-            infoText = data.desc || "No description available.";
-          } else {
-            infoText = text;
-          }
+    let infoText = "";
+    try {
+      const res = await fetch(`./crystals/${data.modelId}/INFO.md`);
+      if (res.ok) {
+        const text = await res.text();
+        // Vite fallback protection
+        if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+          infoText = data.desc || "No description available.";
+        } else {
+          infoText = text;
         }
-        else infoText = data.desc;
-      } catch (e) {
-        infoText = data.desc;
       }
+      else infoText = data.desc;
+    } catch (e) {
+      infoText = data.desc;
+    }
 
-      ui.desc.innerHTML = `
+    ui.desc.innerHTML = `
             <div class="markdown-content">
                 ${parseMarkdown(infoText)}
             </div>
@@ -277,12 +307,12 @@ async function handleLoadCrystal(data, slot) {
             <div style="font-size:0.7em; opacity:0.6;">SOURCE: ${data.url.split('/').pop()}</div>
         `;
 
-    } catch (err) {
-      ui.title.textContent = "LOAD ERROR";
-      ui.desc.textContent = "Corrupted data.";
-    } finally {
-      loader.classList.add('hidden');
-    }
+  } catch (err) {
+    ui.title.textContent = "LOAD ERROR";
+    ui.desc.textContent = "Corrupted data.";
+  } finally {
+    loader.classList.add('hidden');
+  }
 }
 
 function parseMarkdown(text) {
@@ -315,6 +345,19 @@ function setupControls() {
   const btnSpin = document.getElementById('btn-spin');
   const btnReset = document.getElementById('btn-reset');
   const btnToggleInfo = document.getElementById('btn-toggle-info');
+  const btnPan = document.getElementById('btn-pan');
+
+
+  if (btnPan) {
+    btnPan.addEventListener('click', () => {
+      const isActive = mainViewer.toggleAutoPan();
+      btnPan.classList.toggle('active', isActive);
+      // Removed exclusivity logic
+    });
+  }
+
+  // Hook up Spin to disable Pan - REMOVED for independent control
+  // if (btnSpin) ... removed
 
   if (btnToggleInfo) {
     document.getElementById('btn-toggle-info').addEventListener('click', () => {
@@ -353,6 +396,177 @@ function setupControls() {
     });
   }
 
+  // Pan Speed Slider
+  const panSpeedSlider = document.getElementById('pan-speed');
+  if (panSpeedSlider) {
+    panSpeedSlider.addEventListener('input', (e) => {
+      const speed = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setPanSpeed(speed);
+      if (compareViewer) compareViewer.setPanSpeed(speed);
+    });
+  }
+
+  // Rotate Speed Slider
+  const rotSpeedSlider = document.getElementById('rot-speed');
+  if (rotSpeedSlider) {
+    rotSpeedSlider.addEventListener('input', (e) => {
+      const speed = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setRotSpeed(speed);
+      if (compareViewer) compareViewer.setRotSpeed(speed);
+    });
+  }
+
+  // Pan Limits Sliders
+  // Dual Range Slider Logic
+  const rangeMin = document.getElementById('pan-limit-min');
+  const rangeMax = document.getElementById('pan-limit-max');
+  const rangeTrack = document.getElementById('pan-track');
+
+  function updateDualSlider() {
+    if (!rangeMin || !rangeMax || !rangeTrack) return;
+
+    let minVal = parseFloat(rangeMin.value);
+    let maxVal = parseFloat(rangeMax.value);
+
+    // Prevent crossover
+    if (minVal > maxVal - 1) {
+      const temp = minVal;
+      minVal = maxVal - 1;
+      rangeMin.value = minVal;
+    }
+
+    const min = parseFloat(rangeMin.min);
+    const max = parseFloat(rangeMin.max);
+
+    // Update visual track
+    const percentMin = ((minVal - min) / (max - min)) * 100;
+    const percentMax = ((maxVal - min) / (max - min)) * 100;
+
+    rangeTrack.style.left = percentMin + "%";
+    rangeTrack.style.width = (percentMax - percentMin) + "%";
+
+    // Update Viewers
+    if (mainViewer) {
+      mainViewer.setPanMin(minVal);
+      mainViewer.setPanMax(maxVal);
+    }
+    if (compareViewer) {
+      compareViewer.setPanMin(minVal);
+      compareViewer.setPanMax(maxVal);
+    }
+  }
+
+  if (rangeMin && rangeMax) {
+    rangeMin.addEventListener('input', updateDualSlider);
+    rangeMax.addEventListener('input', updateDualSlider);
+    // Init
+    updateDualSlider();
+  }
+
+  // Movement & PERF Section Toggles (Tabs)
+  const btnMovement = document.getElementById('btn-movement');
+  const btnPerf = document.getElementById('btn-perf');
+  const movementSection = document.getElementById('movement-controls');
+  const perfSection = document.getElementById('perf-controls');
+
+  if (btnMovement && btnPerf && movementSection && perfSection) {
+    btnMovement.addEventListener('click', () => {
+      const isOpening = !btnMovement.classList.contains('open');
+
+      // Toggle Movement
+      btnMovement.classList.toggle('open', isOpening);
+      movementSection.classList.toggle('open', isOpening);
+
+      // Close Perf
+      btnPerf.classList.remove('open');
+      perfSection.classList.remove('open');
+    });
+
+    btnPerf.addEventListener('click', () => {
+      const isOpening = !btnPerf.classList.contains('open');
+
+      // Toggle Perf
+      btnPerf.classList.toggle('open', isOpening);
+      perfSection.classList.toggle('open', isOpening);
+
+      // Close Movement
+      btnMovement.classList.remove('open');
+      movementSection.classList.remove('open');
+    });
+  }
+
+  // Auto FPS Toggle (Relocated to bottom of Perf)
+  if (perfSection) {
+    const autoFPSToggle = document.createElement('div');
+    autoFPSToggle.className = 'control-group';
+    autoFPSToggle.innerHTML = `
+      <label for="auto-fps-checkbox" class="control-label">Auto FPS</label>
+      <input type="checkbox" id="auto-fps-checkbox" checked>
+    `;
+    perfSection.appendChild(autoFPSToggle);
+
+    const checkbox = document.getElementById('auto-fps-checkbox');
+    if (checkbox) {
+      checkbox.addEventListener('change', (e) => {
+        autoFPSEnabled = e.target.checked;
+      });
+    }
+
+    // Target FPS Slider
+    const targetFPSSlider = document.createElement('div');
+    targetFPSSlider.className = 'control-group';
+    targetFPSSlider.innerHTML = `
+      <label for="target-fps-slider" class="control-label">Target FPS <span id="target-fps-display">24</span></label>
+      <input type="range" id="target-fps-slider" min="10" max="120" value="24" step="1">
+    `;
+    perfSection.appendChild(targetFPSSlider);
+
+    const targetFPSSliderEl = document.getElementById('target-fps-slider');
+    if (targetFPSSliderEl) {
+      targetFPSSliderEl.addEventListener('input', (e) => {
+        window.targetFPS = parseInt(e.target.value);
+        document.getElementById('target-fps-display').textContent = e.target.value;
+      });
+    }
+
+    // copySettingsBtn
+    const copySettingsBtn = document.createElement('button');
+    copySettingsBtn.className = 'minimal-btn';
+    copySettingsBtn.textContent = 'COPY SETTINGS';
+    copySettingsBtn.style.marginTop = '10px';
+    copySettingsBtn.addEventListener('click', () => {
+      const settings = {
+        panSpeed: parseFloat(document.getElementById('pan-speed').value),
+        rotSpeed: parseFloat(document.getElementById('rot-speed').value),
+        panMin: parseFloat(document.getElementById('pan-limit-min').value),
+        panMax: parseFloat(document.getElementById('pan-limit-max').value),
+        pointSize: parseFloat(document.getElementById('point-size-slider').value),
+        lfoAmount: parseFloat(document.getElementById('lfo-slider').value),
+        lfoSpeed: parseFloat(document.getElementById('lfo-speed').value),
+        lineDist: parseFloat(document.getElementById('line-dist-slider').value),
+        nodeDist: parseFloat(document.getElementById('node-dist-slider').value),
+        lineDensity: parseFloat(document.getElementById('line-density-slider').value),
+        nodeDensity: parseFloat(document.getElementById('node-density-slider').value),
+        summarizeThin: parseFloat(document.getElementById('summarize-thin').value),
+        viewHeight: parseFloat(document.getElementById('view-height').value),
+        xorDensity: parseFloat(document.getElementById('xor-density-slider').value),
+        pulse: document.getElementById('btn-toggle-pulse').classList.contains('active'),
+        autoPan: document.getElementById('btn-pan').classList.contains('active'),
+        autoRotate: document.getElementById('btn-spin').classList.contains('active'),
+        targetFPS: targetFPS,
+        autoFPS: autoFPSEnabled
+      };
+      const settingsJSON = JSON.stringify(settings, null, 2);
+      navigator.clipboard.writeText(settingsJSON).then(() => {
+        showToast('Settings copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy settings:', err);
+        showToast('Failed to copy settings.', true);
+      });
+    });
+    perfSection.appendChild(copySettingsBtn);
+  }
+
   // Easter Egg Toggle
   const btnEgg = document.getElementById('btn-easter-egg');
   if (btnEgg) {
@@ -377,6 +591,101 @@ function setupControls() {
       const isActive = btnPulse.classList.toggle('active');
       btnPulse.textContent = isActive ? "FLOW: ON" : "FLOW: OFF";
       if (mainViewer) mainViewer.setPulse(isActive);
+    });
+  }
+
+  // Point Size Slider
+  const pointSizeSlider = document.getElementById('point-size-slider');
+  if (pointSizeSlider) {
+    pointSizeSlider.addEventListener('input', (e) => {
+      const size = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setBaseSize(size);
+      if (compareViewer) compareViewer.setBaseSize(size);
+    });
+  }
+
+  // View Height Control
+  const heightSlider = document.getElementById('view-height');
+  if (heightSlider) {
+    heightSlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setManualHeight(val);
+      if (compareViewer) compareViewer.setManualHeight(val);
+    });
+  }
+
+  // LFO Slider
+  const lfoSlider = document.getElementById('lfo-slider');
+  if (lfoSlider) {
+    lfoSlider.addEventListener('input', (e) => {
+      const amount = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setLFOAmount(amount);
+      if (compareViewer) compareViewer.setLFOAmount(amount);
+    });
+  }
+
+  // LFO Speed Slider
+  const lfoSpeedSlider = document.getElementById('lfo-speed');
+  if (lfoSpeedSlider) {
+    lfoSpeedSlider.addEventListener('input', (e) => {
+      const speed = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setLFOSpeed(speed);
+      if (compareViewer) compareViewer.setLFOSpeed(speed);
+    });
+  }
+
+  // PERFORMANCE Property Sliders
+  const lineDistSlider = document.getElementById('line-dist-slider');
+  if (lineDistSlider) {
+    lineDistSlider.addEventListener('input', (e) => {
+      const dist = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setLineDist(dist);
+      if (compareViewer) compareViewer.setLineDist(dist);
+    });
+  }
+
+  const nodeDistSlider = document.getElementById('node-dist-slider');
+  if (nodeDistSlider) {
+    nodeDistSlider.addEventListener('input', (e) => {
+      const dist = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setNodeDist(dist);
+      if (compareViewer) compareViewer.setNodeDist(dist);
+    });
+  }
+
+  const lineDensitySlider = document.getElementById('line-density-slider');
+  if (lineDensitySlider) {
+    lineDensitySlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setLineDensity(val);
+      if (compareViewer) compareViewer.setLineDensity(val);
+    });
+  }
+
+  const nodeDensitySlider = document.getElementById('node-density-slider');
+  if (nodeDensitySlider) {
+    nodeDensitySlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setNodeDensity(val);
+      if (compareViewer) compareViewer.setNodeDensity(val);
+    });
+  }
+
+  const summarizeThinSlider = document.getElementById('summarize-thin');
+  if (summarizeThinSlider) {
+    summarizeThinSlider.addEventListener('input', (e) => {
+      const intensity = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setThinning(intensity);
+      if (compareViewer) compareViewer.setThinning(intensity);
+    });
+  }
+
+  const xorDensitySlider = document.getElementById('xor-density-slider');
+  if (xorDensitySlider) {
+    xorDensitySlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      if (mainViewer) mainViewer.setXorDensity(val);
+      if (compareViewer) compareViewer.setXorDensity(val);
     });
   }
 
@@ -436,24 +745,24 @@ function setupControls() {
   toggleCompare.addEventListener('change', (e) => {
     isCompareMode = e.target.checked;
     if (isCompareMode) {
-          viewCompare.classList.remove('hidden');
-          viewerContainer.classList.add('split');
-          panelB.classList.remove('hidden');
-          setActiveSlot('compare');
-          setTimeout(() => {
-            mainViewer.onResize();
-            compareViewer.onResize();
-          }, 550);
-        } else {
-          viewCompare.classList.add('hidden');
-          viewerContainer.classList.remove('split');
-          panelB.classList.add('hidden');
-          setActiveSlot('main');
-        setTimeout(() => {
-          mainViewer.onResize();
-        }, 550);
-      }
-    });
+      viewCompare.classList.remove('hidden');
+      viewerContainer.classList.add('split');
+      panelB.classList.remove('hidden');
+      setActiveSlot('compare');
+      setTimeout(() => {
+        mainViewer.onResize();
+        compareViewer.onResize();
+      }, 550);
+    } else {
+      viewCompare.classList.add('hidden');
+      viewerContainer.classList.remove('split');
+      panelB.classList.add('hidden');
+      setActiveSlot('main');
+      setTimeout(() => {
+        mainViewer.onResize();
+      }, 550);
+    }
+  });
 }
 // Toast Helper
 function showToast(msg, isAlert = false) {
@@ -647,6 +956,7 @@ setTimeout(() => {
 
     btnTimeline.addEventListener('click', enterTimelineMode);
 
+
     headerStatus.insertBefore(btnTimeline, headerStatus.firstChild);
   }
 }, 1000); // Wait for DOM
@@ -654,4 +964,101 @@ setTimeout(() => {
 // Self-init timeline data independently to avoid scope issues
 fetch('./crystals/manifest.json').then(r => r.json()).then(models => {
   setupTimelineMode(models);
+});
+
+// --- DYNAMIC PERFORMANCE GOVERNOR ---
+let fpsStabilityCounter = 0;
+let xorReductionDelay = 0;
+window.addEventListener('fps-update', (e) => {
+  const fps = e.detail.fps;
+  const thinSlider = document.getElementById('summarize-thin');
+  const lineDistSlider = document.getElementById('line-dist-slider');
+  const nodeDistSlider = document.getElementById('node-dist-slider');
+  const lineDensitySlider = document.getElementById('line-density-slider');
+  const nodeDensitySlider = document.getElementById('node-density-slider');
+  const xorDensitySlider = document.getElementById('xor-density-slider');
+
+  if (!thinSlider || !lineDistSlider || !nodeDistSlider || !lineDensitySlider || !nodeDensitySlider || !xorDensitySlider) return;
+
+  let currentThin = parseFloat(thinSlider.value);
+  let currentLineDist = parseFloat(lineDistSlider.value);
+  let currentNodeDist = parseFloat(nodeDistSlider.value);
+  let currentLineDensity = parseFloat(lineDensitySlider.value);
+  let currentNodeDensity = parseFloat(nodeDensitySlider.value);
+  let currentXorDensity = parseFloat(xorDensitySlider.value);
+
+  let nextThin = currentThin;
+  let nextLineDist = currentLineDist;
+  let nextNodeDist = currentNodeDist;
+  let nextLineDensity = currentLineDensity;
+  let nextNodeDensity = currentNodeDensity;
+  let nextXorDensity = currentXorDensity;
+
+  if (autoFPSEnabled) {
+    if (fps < targetFPS && fps > 0) {
+      // PERFORMANCE DROP: Tiered Optimization
+      // 1. Reduce XOR visibility first, but keep at least 5%
+      if (currentXorDensity > 5) {
+        nextXorDensity = Math.max(5, currentXorDensity - 5);
+        xorReductionDelay = 0;
+      } else {
+        xorReductionDelay++;
+        if (xorReductionDelay > 5) {
+          // 2. Increase Thinning before dropping density
+          if (currentThin < 1.0) {
+            nextThin = Math.min(1.0, currentThin + 0.1);
+          }
+          // 3. Reduce line/node density BEFORE distance clipping
+          else if (currentLineDensity > 10) {
+            nextLineDensity = Math.max(10, currentLineDensity - 5);
+            nextNodeDensity = Math.max(10, currentNodeDensity - 5);
+          } else {
+            // 4. Last resort: reduce distance clipping much faster
+            nextLineDist = Math.max(10, currentLineDist - 20);
+            nextNodeDist = Math.max(10, currentNodeDist - 20);
+          }
+        }
+      }
+      fpsStabilityCounter = 0;
+    } else if (fps >= targetFPS + 1) {
+      fpsStabilityCounter++;
+      if (fpsStabilityCounter > 4) {
+        // RECOVERY: Density -> Distance -> Thinning -> XOR
+        if (currentLineDensity < 100) {
+          nextLineDensity = Math.min(100, currentLineDensity + 1);
+          nextNodeDensity = Math.min(100, currentNodeDensity + 1);
+        } else if (currentLineDist < 100) {
+          nextLineDist = Math.min(100, currentLineDist + 5);
+          nextNodeDist = Math.min(100, currentNodeDist + 5);
+        } else if (currentThin > 0.4) {
+          nextThin = Math.max(0.4, currentThin - 0.05);
+        } else if (currentXorDensity < 100) {
+          nextXorDensity = Math.min(100, currentXorDensity + 1);
+        }
+      }
+    }
+
+    if (nextThin !== currentThin || nextLineDist !== currentLineDist || nextNodeDist !== currentNodeDist ||
+      nextLineDensity !== currentLineDensity || nextNodeDensity !== currentNodeDensity || nextXorDensity !== currentXorDensity) {
+
+      thinSlider.value = nextThin;
+      lineDistSlider.value = nextLineDist;
+      nodeDistSlider.value = nextNodeDist;
+      lineDensitySlider.value = nextLineDensity;
+      nodeDensitySlider.value = nextNodeDensity;
+      xorDensitySlider.value = nextXorDensity;
+
+      // Apply to viewers
+      [mainViewer, compareViewer].forEach(v => {
+        if (v) {
+          v.setThinning(nextThin);
+          v.setLineDist(nextLineDist);
+          v.setNodeDist(nextNodeDist);
+          v.setLineDensity(nextLineDensity);
+          v.setNodeDensity(nextNodeDensity);
+          v.setXorDensity(nextXorDensity);
+        }
+      });
+    }
+  }
 });
