@@ -100,7 +100,7 @@ export class GlitchEnemy {
     // Non-wraiths will hunt the player if they are close
     if (!this.isWraith && playerPos) {
       const distSq = this.mesh.position.distanceToSquared(playerPos);
-      if (distSq < 10000) { // 100 units squared
+      if (distSq < 625) { // 25 units squared (Reduced from 100)
         targetPos = playerPos;
         this.isTargetingPlayer = true;
       }

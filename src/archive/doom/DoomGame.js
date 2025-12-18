@@ -329,7 +329,7 @@ export class DoomGame {
 
   spawnDrop(pos) {
     const roll = Math.random();
-    if (roll > 0.4) return;
+    if (roll > 0.8) return; // 80% chance of drop (up from 40%)
 
     // Weighted Drops
     let type = 'ammo_shotgun';
