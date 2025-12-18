@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ArchiveEnvironment } from './ArchiveEnvironment.js';
 import { FirstPersonController } from './FirstPersonController.js';
-import { DoomManager } from './DoomManager.js';
+import { DoomGame } from './doom/DoomGame.js';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
 
 class ArchiveManager {
@@ -111,7 +111,7 @@ class ArchiveManager {
         this.environment.build(Math.max(200, this.models.length * 50));
 
         this.player = new FirstPersonController(this.camera, document.body); // Bind to body for pointer lock
-        this.doomManager = new DoomManager(this.scene, this.camera);
+        this.doomManager = new DoomGame(this.scene, this.camera);
 
         // Unlock Listener to Show Menu
         this.player.controls.addEventListener('unlock', () => {
@@ -256,7 +256,7 @@ class ArchiveManager {
             // Check distance
             if (Math.abs(p.x - 10) < 4 && Math.abs(p.z - 20) < 4) {
                 if (!this.doomManager.active) {
-                    this.doomManager.activate();
+                    this.doomManager.activate(this.exhibits);
                 }
             }
         }
