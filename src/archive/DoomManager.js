@@ -2,26 +2,55 @@ import * as THREE from 'three';
 
 // --- INLINED DEPENDENCIES TO FIX LOADING ISSUES ---
 
+// STATIC VECTOR POOLING FOR PERFORMANCE
 class GlitchEnemy {
-    constructor(scene, position, target) {
+    static tempDir = new THREE.Vector3();
+
+    constructor(scene, position, target, type = 'normal') {
         this.scene = scene;
         this.target = target;
-        this.life = 6;
-        this.speed = 12; // Fast
+        this.type = type;
         this.active = true;
+
+        // Base Stats
+        this.life = 10;
+        this.speed = 12;
+        this.damage = 10;
+        this.color = 0xff0000;
+        this.scale = 6.0;
+
+        // Specialized Variants
+        if (type === 'scout') {
+            this.life = 5;
+            this.speed = 22;
+            this.color = 0xffff00; // Yellow
+            this.scale = 3.5;
+        } else if (type === 'tank') {
+            this.life = 50;
+            this.speed = 7;
+            this.damage = 50; // VERY DANGEROUS
+            this.color = 0x660000; // Deep Red
+            this.scale = 14.0;
+        } else if (type === 'wraith') {
+            this.life = 12;
+            this.speed = 14;
+            this.color = 0x00ffff; // Cyan/Ghostly
+            this.scale = 5.0;
+            this.isWraith = true; // Ignores player proximity
+        }
 
         this.mesh = new THREE.Group();
         this.mesh.position.copy(position);
 
         // Demon Head Visuals
         const headGeo = new THREE.BoxGeometry(1, 1.2, 1);
-        const mat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+        const mat = new THREE.MeshBasicMaterial({ color: this.color, wireframe: true, transparent: type === 'wraith', opacity: 0.6 });
         const head = new THREE.Mesh(headGeo, mat);
         this.mesh.add(head);
 
         // Horns
         const hornGeo = new THREE.ConeGeometry(0.2, 0.8, 8);
-        const hornMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        const hornMat = new THREE.MeshBasicMaterial({ color: (type === 'tank' ? 0xff4400 : 0xffaa00) });
 
         const hornL = new THREE.Mesh(hornGeo, hornMat);
         hornL.position.set(-0.4, 0.8, 0);
@@ -35,7 +64,7 @@ class GlitchEnemy {
 
         // Eyes
         const eyeGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: (type === 'scout' ? 0xffffff : 0x00ff00) });
         const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
         eyeL.position.set(-0.25, 0.1, 0.5);
         this.mesh.add(eyeL);
@@ -43,28 +72,36 @@ class GlitchEnemy {
         eyeR.position.set(0.25, 0.1, 0.5);
         this.mesh.add(eyeR);
 
+        this.mesh.scale.set(this.scale, this.scale, this.scale);
         this.scene.add(this.mesh);
     }
 
-    update(delta) {
+    update(delta, playerPos) {
         if (!this.active) return 'remove';
 
-        // Always move towards target (or player if target lost)
-        const targetPos = this.target ? this.target.position : null;
+        // TARGETING LOGIC
+        let targetPos = this.target ? this.target.position : null;
+
+        // Non-wraiths will hunt the player if they are close
+        if (!this.isWraith && playerPos) {
+            const distSq = this.mesh.position.distanceToSquared(playerPos);
+            if (distSq < 400) { // 20 units squared
+                targetPos = playerPos;
+            }
+        }
+
         if (!targetPos) return 'remove';
 
-        const dist = this.mesh.position.distanceTo(targetPos);
-
-        // Move
-        const dir = new THREE.Vector3().subVectors(targetPos, this.mesh.position).normalize();
-        this.mesh.position.add(dir.multiplyScalar(this.speed * delta));
+        // VECTOR POOLING: REUSE STATIC VECTOR
+        GlitchEnemy.tempDir.subVectors(targetPos, this.mesh.position).normalize();
+        this.mesh.position.add(GlitchEnemy.tempDir.multiplyScalar(this.speed * delta));
 
         // Rotate
-        this.mesh.rotation.x += delta * 5;
         this.mesh.rotation.y += delta * 5;
 
-        // Attack Reach
-        if (dist < 3.0) {
+        // Attack Reach (Squared for performance)
+        const attackDistSq = this.mesh.position.distanceToSquared(targetPos);
+        if (attackDistSq < 16.0) { // 4.0 units squared
             return 'damage';
         }
         return 'move';
@@ -79,9 +116,9 @@ class GlitchEnemy {
                 c.material.color.setHex(0xffffff);
                 setTimeout(() => {
                     if (this.active && c.material) {
-                        if (c.geometry.type === 'BoxGeometry' && c.position.y === 0) c.material.color.setHex(0xff0000);
-                        else if (c.geometry.type === 'ConeGeometry') c.material.color.setHex(0xffaa00);
-                        else c.material.color.setHex(0x00ff00);
+                        if (c.geometry.type === 'BoxGeometry' && c.position.y === 0) c.material.color.setHex(this.color);
+                        else if (c.geometry.type === 'ConeGeometry') c.material.color.setHex(this.type === 'tank' ? 0xff4400 : 0xffaa00);
+                        else c.material.color.setHex(this.type === 'scout' ? 0xffffff : 0x00ff00);
                     }
                 }, 50);
             }
@@ -101,20 +138,22 @@ class GlitchEnemy {
 }
 
 class Weapon {
-    constructor(name, cooldown, damage, color, type) {
+    constructor(name, cooldown, damage, color, type, maxAmmo = -1) {
         this.name = name;
         this.cooldown = cooldown;
         this.damage = damage;
         this.color = color;
         this.type = type; // 'hitscan', 'projectile', 'spread'
+        this.ammo = maxAmmo;
+        this.maxAmmo = maxAmmo;
         this.lastShot = 0;
     }
 }
 
 const WEAPONS = [
-    new Weapon("BLASTER", 150, 1, 0x00ff00, 'hitscan'),
-    new Weapon("SHOTGUN", 1000, 1, 0xffaa00, 'spread'),
-    new Weapon("LAUNCHER", 1500, 5, 0xff0000, 'projectile')
+    new Weapon("BLASTER", 90, 1, 0x00ff00, 'hitscan', -1), // Infinite
+    new Weapon("SHOTGUN", 1000, 1, 0xffaa00, 'spread', 12),
+    new Weapon("LAUNCHER", 1500, 20, 0xff0000, 'projectile', 4)
 ];
 
 // --- DOOM MANAGER ---
@@ -128,10 +167,15 @@ export class DoomManager {
         // Game State
         this.score = 0;
         this.wave = 1;
+        this.playerHealth = 100; // New: Player HP
         this.enemies = [];
         this.projectiles = [];
         this.particles = [];
+        this.pickups = []; // New: Health pickups
         this.gameInterval = null;
+        this.spawnInterval = null;
+        this.pickupInterval = null;
+        this.lastHUDState = {}; // Performance: Track state to minimize DOM updates
 
         // Weapons
         this.weapons = WEAPONS;
@@ -195,20 +239,26 @@ export class DoomManager {
                             background: rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:center; align-items:center;
                             text-align: center; color: white; z-index: 5000; pointer-events: auto;">
                     <h1 style="font-size: 60px; color: #ff0033; text-shadow:0 0 20px red; font-family:'Orbitron', sans-serif;">PROTOCOL: FIREWALL</h1>
-                    <p style="font-size: 24px; max-width: 600px; line-height: 1.5; font-family:'Orbitron', sans-serif;">
-                        <span style="color:red; font-weight:bold;">ENEMIES TARGET THE ARCHIVE</span><br>
-                        DEFEND THE MODELS.<br>
-                        <br>
-                        [1] BLASTER - Rapid Fire<br>
-                        [2] SHOTGUN - Wide Spread<br>
-                        [3] LAUNCHER - Explosive<br>
-                        <br>
-                        <span style="color:#00ff00; font-weight:bold;">PRESS [ENTER] TO START</span><br>
-                        <span style="color:#666;">PRESS [ESC] TO CANCEL</span>
+                    <p style="font-size: 18px; max-width: 800px; line-height: 1.4; font-family:'Orbitron', sans-serif; text-align: left;">
+                        <span style="color:#ff0033; font-weight:bold; font-size:24px;">OBJECTIVE: DEFEND THE ARCHIVE</span><br>
+                        Stop the Glitch demons from corrupting the AI Model Crystals.<br><br>
+
+                        <span style="color:#00ff88; font-weight:bold;">WEAPONS & AMMO:</span><br>
+                        • [1] BLASTER: Infinite Energy. Your reliable base defense.<br>
+                        • [2] SHOTGUN: Devastating spread. Requires <span style="color:#ffaa00;">ORANGE SHELLS</span>.<br>
+                        • [3] LAUNCHER: Heavy explosives. Requires <span style="color:#ff00ff;">PURPLE ROCKETS</span>.<br><br>
+
+                        <span style="color:#00ffff; font-weight:bold;">RESOURCES:</span><br>
+                        • <span style="color:#ffaa00; font-weight:bold;">ORANGE/PURPLE BOXES</span>: Dropped by enemies. Refills Ammo.<br>
+                        • <span style="color:#00ff88; font-weight:bold;">GREEN CROSSES</span>: Medical Nanites. Restores 30% Health.<br><br>
+
+                        <span style="color:#ff0033; font-weight:bold;">CONTROLS:</span> [MOUSE1] Fire | [1-3] Switch | [ESC] Exit<br><br>
+
+                        <center><span style="color:#ffffff; font-weight:bold; font-size:24px;">PRESS [ENTER] TO INITIATE</span></center>
                     </p>
-                    <button id="doom-start-btn" style="margin-top:40px; padding: 20px 40px; font-size: 30px; 
+                    <button id="doom-start-btn" style="margin-top:20px; padding: 15px 30px; font-size: 24px;
                                 border: 2px solid #ff0033; background: #330000; color: #ff0033; cursor: pointer; font-family: 'Orbitron', sans-serif;">
-                        INITIATE DEFENSE
+                        START SIMULATION
                     </button>
                 </div>
             `;
@@ -224,6 +274,7 @@ export class DoomManager {
                 if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
                 this.playMusic();
                 this.startWave();
+                this.startPickups(); // NEW: Start spawning health
 
                 // Lock pointer again for gameplay
                 document.body.requestPointerLock();
@@ -254,19 +305,51 @@ export class DoomManager {
     }
 
     deactivate() {
+        if (!this.active) return;
         this.active = false;
+        console.log("🛡️ DEFENSE MODE DEACTIVATED");
+
+        // Force Unlock Pointer IMMEDIATELY
+        if (document.pointerLockElement) {
+            document.exitPointerLock();
+        }
+
+        // Standard Cleanup
         if (this.weaponMesh) { this.camera.remove(this.weaponMesh); this.weaponMesh = null; }
-        if (this.clickParams) document.removeEventListener('mousedown', this.clickParams.handler);
-        if (this.keyParams) window.removeEventListener('keydown', this.keyParams.handler);
-        if (this.musicInterval) clearInterval(this.musicInterval);
-        if (this.spawnInterval) clearInterval(this.spawnInterval);
+        if (this.clickParams) { document.removeEventListener('mousedown', this.clickParams.handler); this.clickParams = null; }
+        if (this.keyParams) { window.removeEventListener('keydown', this.keyParams.handler); this.keyParams = null; }
+        if (this.musicInterval) { clearInterval(this.musicInterval); this.musicInterval = null; }
+        if (this.spawnInterval) { clearInterval(this.spawnInterval); this.spawnInterval = null; }
+        if (this.pickupInterval) { clearInterval(this.pickupInterval); this.pickupInterval = null; }
+
         if (this.hud) { this.hud.remove(); this.hud = null; }
+        this.lastHUDState = {};
+
         this.enemies.forEach(e => { if (e.active) this.scene.remove(e.mesh); });
         this.enemies = [];
+
+        if (this.pickups) {
+            this.pickups.forEach(p => { if (p.mesh) this.scene.remove(p.mesh); });
+            this.pickups = [];
+        }
+
         this.projectiles.forEach(p => {
-            if (p.mesh) { this.scene.remove(p.mesh); if (p.mesh.geometry) p.mesh.geometry.dispose(); if (p.mesh.material) p.mesh.material.dispose(); }
+            if (p.mesh) {
+                this.scene.remove(p.mesh);
+                if (p.mesh.geometry) p.mesh.geometry.dispose();
+                if (p.mesh.material) p.mesh.material.dispose();
+            }
         });
         this.projectiles = [];
+
+        this.particles.forEach(p => {
+            if (p.mesh) {
+                this.scene.remove(p.mesh);
+                if (p.mesh.geometry) p.mesh.geometry.dispose();
+                if (p.mesh.material) p.mesh.material.dispose();
+            }
+        });
+        this.particles = [];
     }
 
     startWave() {
@@ -283,7 +366,7 @@ export class DoomManager {
     }
 
     spawnEnemy() {
-        if (this.enemies.length > 30) return;
+        if (this.enemies.length > 40) return;
 
         // 1. Get ALL valid targets
         const targets = [];
@@ -301,16 +384,81 @@ export class DoomManager {
 
         const target = targets[Math.floor(Math.random() * targets.length)];
 
-        // 2. Spawn relative to PLAYER so you SEE them
+        // 2. Decide TYPE based on Wave
+        let type = 'normal';
+        const roll = Math.random();
+        if (this.wave >= 2 && roll < 0.3) type = 'scout';
+        if (this.wave >= 3 && roll < 0.15) type = 'tank';
+        if (this.wave >= 4 && roll < 0.1) type = 'wraith';
+
+        // 3. Spawning relative to player
         const angle = Math.random() * Math.PI * 2;
         const radius = 60 + Math.random() * 40;
-
         const spawnX = this.camera.position.x + Math.cos(angle) * radius;
         const spawnZ = this.camera.position.z + Math.sin(angle) * radius;
 
-        const enemy = new GlitchEnemy(this.scene, new THREE.Vector3(spawnX, 4, spawnZ), target);
-        enemy.mesh.scale.set(3, 3, 3);
+        const enemy = new GlitchEnemy(this.scene, new THREE.Vector3(spawnX, 4, spawnZ), target, type);
+
+        // WAVE SCALING
+        const multiplier = 1 + (this.wave - 1) * 0.15;
+        enemy.life *= multiplier;
+        enemy.speed *= (1 + (this.wave - 1) * 0.1);
+
         this.enemies.push(enemy);
+    }
+
+    spawnDrop(pos) {
+        const roll = Math.random();
+        if (roll > 0.4) return; // 40% chance for ANY drop
+
+        let type = 'ammo_shotgun';
+        let color = 0xffaa00; // Orange
+        if (Math.random() > 0.7) {
+            type = 'ammo_launcher';
+            color = 0xff00ff; // Purple/Magenta
+        }
+
+        const geo = new THREE.BoxGeometry(2.0, 2.0, 2.0);
+        const mat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.9 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.copy(pos);
+        mesh.position.y = 2.0;
+        this.scene.add(mesh);
+
+        // Solid core
+        const core = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshBasicMaterial({ color: color }));
+        mesh.add(core);
+
+        this.pickups.push({ mesh, type: type });
+    }
+
+    startPickups() {
+        if (this.pickupInterval) clearInterval(this.pickupInterval);
+        this.pickupInterval = setInterval(() => {
+            if (!this.active || this.isGameOver) return;
+            this.spawnHealthPickup();
+        }, 20000); // Every 20 seconds
+    }
+
+    spawnHealthPickup() {
+        const radius = 20 + Math.random() * 40;
+        const angle = Math.random() * Math.PI * 2;
+        const x = this.camera.position.x + Math.cos(angle) * radius;
+        const z = this.camera.position.z + Math.sin(angle) * radius;
+
+        const geo = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, wireframe: true, transparent: true, opacity: 0.9 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(x, 2.5, z);
+        this.scene.add(mesh);
+
+        // HEALTH CROSS VISUAL
+        const crossH = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.5, 0.5), new THREE.MeshBasicMaterial({ color: 0x00ff88 }));
+        const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 0.5), new THREE.MeshBasicMaterial({ color: 0x00ff88 }));
+        mesh.add(crossH);
+        mesh.add(crossV);
+
+        this.pickups.push({ mesh, type: 'health', value: 30 });
     }
 
     triggerGameOver() {
@@ -350,6 +498,7 @@ export class DoomManager {
         this.isGameOver = false;
         this.score = 0;
         this.wave = 1;
+        this.playerHealth = 100;
         this.scene.traverse(obj => {
             if (obj.isPoints) {
                 obj.visible = true;
@@ -359,18 +508,22 @@ export class DoomManager {
         });
         this.enemies.forEach(e => { this.scene.remove(e.mesh); e.active = false; });
         this.enemies = [];
+        this.pickups.forEach(p => { this.scene.remove(p.mesh); });
+        this.pickups = [];
+
         if (this.hud) this.hud.remove();
         this.createHUD();
         this.updateHUD();
         this.playMusic();
         this.startWave();
+        this.startPickups();
     }
 
     update(delta) {
-        if (!this.active) return;
+        if (!this.active || this.isGameOver) return;
 
         // AUTO-RESUME AUDIO
-        if (this.audioCtx && this.audioCtx.state === 'suspended' && this.active) {
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
 
@@ -378,7 +531,16 @@ export class DoomManager {
             // Enemies
             for (let i = this.enemies.length - 1; i >= 0; i--) {
                 const e = this.enemies[i];
-                const result = e.update(delta);
+                const result = e.update(delta, this.camera.position);
+
+                // PLAYER DAMAGE CHECK (Squared for performance)
+                const distToPlayerSq = e.mesh.position.distanceToSquared(this.camera.position);
+                if (distToPlayerSq < 16.0) { // 4.0 units squared
+                    this.playerHealth -= e.damage * delta * 2; // Scaled damage
+                    if (Math.random() < 0.05) this.playSound(80, 'square', 0.1, 0.2); // Pain sound
+                    if (this.playerHealth <= 0) { this.triggerGameOver(); return; }
+                    this.updateHUD();
+                }
 
                 if (result === 'damage') {
                     this.createExplosion(e.mesh.position, 0x00ffff, true);
@@ -397,8 +559,47 @@ export class DoomManager {
                     }
                     e.takeDamage(999);
                 }
+
+                // DEAD ENEMY LOGIC (DROPS)
                 if (!e.active) {
+                    if (e.life <= 0) {
+                        this.spawnDrop(e.mesh.position);
+                    }
                     this.enemies.splice(i, 1);
+                }
+            }
+
+            // Pickups
+            for (let i = this.pickups.length - 1; i >= 0; i--) {
+                const p = this.pickups[i];
+                p.mesh.rotation.y += delta * 2;
+                p.mesh.position.y = 1 + Math.sin(Date.now() * 0.005) * 0.5;
+
+                // 2D Distance Check (ignores height differences)
+                const dx = p.mesh.position.x - this.camera.position.x;
+                const dz = p.mesh.position.z - this.camera.position.z;
+                const dist2D = Math.sqrt(dx * dx + dz * dz);
+
+                if (dist2D < 10.0) {
+                    if (p.type === 'health') {
+                        this.playerHealth = Math.min(100, this.playerHealth + p.value);
+                        this.playSound(600, 'sine', 0.3, 0.4);
+                    } else if (p.type === 'ammo_shotgun') {
+                        const w = this.weapons.find(nw => nw.name === "SHOTGUN");
+                        if (w) {
+                            w.ammo = Math.min(w.maxAmmo, w.ammo + 8); // Increased ammo reward
+                            this.playSound(400, 'sine', 0.1, 0.2);
+                        }
+                    } else if (p.type === 'ammo_launcher') {
+                        const w = this.weapons.find(nw => nw.name === "LAUNCHER");
+                        if (w) {
+                            w.ammo = Math.min(w.maxAmmo, w.ammo + 2); // Increased ammo reward
+                            this.playSound(300, 'sine', 0.1, 0.2);
+                        }
+                    }
+                    this.scene.remove(p.mesh);
+                    this.pickups.splice(i, 1);
+                    this.updateHUD();
                 }
             }
 
@@ -418,31 +619,37 @@ export class DoomManager {
     }
 
     shoot() {
-        if (!this.active) return;
+        if (!this.active || this.isGameOver) return;
         const w = this.weapons[this.currentWeaponIdx];
+
+        // AMMO CHECK
+        if (w.ammo !== -1 && w.ammo <= 0) {
+            this.playSound(200, 'sine', 0.05, 0.1); // Dry fire click
+            return;
+        }
+
         const now = Date.now();
         if (now - w.lastShot < w.cooldown) return;
         w.lastShot = now;
+
+        // CONSUME AMMO
+        if (w.ammo !== -1) w.ammo--;
+        this.updateHUD();
 
         this.weaponRecoil = 0.2;
         this.muzzleLight.intensity = 5;
         setTimeout(() => { if (this.muzzleLight) this.muzzleLight.intensity = 0; }, 50);
 
         // Sounds
-        if (w.name === "BLASTER") this.playSound(800, 'sine', 0.1, 0.3);
-        if (w.name === "SHOTGUN") {
-            this.playSound(100, 'sawtooth', 0.2, 0.5);
-            this.playSound(200, 'square', 0.1, 0.3);
-        }
-        if (w.name === "LAUNCHER") {
-            this.playSound(60, 'triangle', 0.5, 0.5);
-        }
+        this.playWeaponSound(w.name);
 
         if (w.type === 'hitscan') {
             this.fireHitscan(w);
         } else if (w.type === 'spread') {
-            // SCATTER SHOT: VISIBLE 
-            for (let i = 0; i < 20; i++) this.fireHitscan(w, 0.5); // 20 pellets, 0.5 spread
+            this.fireHitscan(w, 0);
+            for (let i = 0; i < 14; i++) {
+                this.fireHitscan(w, 0.15);
+            }
         } else if (w.type === 'projectile') {
             this.fireProjectile(w);
         }
@@ -495,7 +702,7 @@ export class DoomManager {
         this.scene.add(mesh);
         this.projectiles.push({
             mesh,
-            velocity: forward.multiplyScalar(30),
+            velocity: forward.multiplyScalar(80), // FASTER (was 30)
             life: 5.0,
             damage: weapon.damage,
             isRocket: true
@@ -512,6 +719,31 @@ export class DoomManager {
                 if (p.isRocket) {
                     p.mesh.rotation.x += delta * 5;
                     p.mesh.rotation.z += delta * 2;
+
+                    // ROCKET COLLISION CHECK
+                    let hit = false;
+                    for (const enemy of this.enemies) {
+                        if (p.mesh.position.distanceTo(enemy.mesh.position) < 3.0) {
+                            hit = true;
+                            break;
+                        }
+                    }
+                    if (p.mesh.position.y < 0.5) hit = true;
+
+                    if (hit) {
+                        p.life = 0; // Trigger explosion
+                        // SPLASH DAMAGE Logic
+                        this.enemies.forEach(enemy => {
+                            const dist = enemy.mesh.position.distanceTo(p.mesh.position);
+                            if (dist < 10.0) {
+                                enemy.takeDamage(p.damage);
+                                if (enemy.life <= 0) {
+                                    this.score += 100;
+                                    this.updateHUD();
+                                }
+                            }
+                        });
+                    }
                 }
 
                 if (p.life <= 0) {
@@ -547,8 +779,9 @@ export class DoomManager {
     }
 
     createExplosion(pos, color, isBig = false, life = null) {
-        const count = isBig ? 60 : 15;
-        const spread = isBig ? 3.0 : 0.5;
+        // HUGE EXPLOSION for Rockets
+        const count = isBig ? 100 : 15;
+        const spread = isBig ? 8.0 : 0.5; // MUCH BIGGER SPREAD (was 3.0)
 
         const geo = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
@@ -563,7 +796,7 @@ export class DoomManager {
         }
         geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const mat = new THREE.PointsMaterial({
-            color, size: isBig ? 0.8 : 0.3, transparent: true, blending: THREE.AdditiveBlending
+            color, size: isBig ? 1.5 : 0.3, transparent: true, blending: THREE.AdditiveBlending
         });
         const ps = new THREE.Points(geo, mat);
         this.scene.add(ps);
@@ -584,20 +817,54 @@ export class DoomManager {
             p.mesh.material.opacity = p.life;
             if (p.life <= 0) {
                 this.scene.remove(p.mesh);
+                if (p.mesh.geometry) p.mesh.geometry.dispose();
+                if (p.mesh.material) p.mesh.material.dispose();
                 this.particles.splice(i, 1);
             }
         }
     }
 
-    playSound(freq, type, duration, vol) {
+    playSound(freq, type, duration, vol, detune = 0) {
         if (!this.audioCtx) return;
         const o = this.audioCtx.createOscillator();
         const g = this.audioCtx.createGain();
-        o.type = type; o.frequency.value = freq;
+        o.type = type;
+        o.frequency.setValueAtTime(freq, this.audioCtx.currentTime);
+        if (detune) o.detune.setValueAtTime(detune, this.audioCtx.currentTime);
+
         g.gain.setValueAtTime(vol, this.audioCtx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + duration);
-        o.connect(g); g.connect(this.audioCtx.destination);
-        o.start(); o.stop(this.audioCtx.currentTime + duration);
+
+        o.connect(g);
+        g.connect(this.audioCtx.destination);
+        o.start();
+        o.stop(this.audioCtx.currentTime + duration);
+    }
+
+    playWeaponSound(type) {
+        if (type === 'BLASTER') {
+            this.playSound(800, 'sine', 0.1, 0.3);
+            this.playSound(400, 'sawtooth', 0.05, 0.1);
+        } else if (type === 'SHOTGUN') {
+            // Layered blast
+            this.playSound(100, 'sawtooth', 0.3, 0.5);
+            this.playSound(80, 'square', 0.2, 0.4, 10);
+            this.playSound(60, 'sawtooth', 0.4, 0.3, -10);
+            // Mechanical click
+            setTimeout(() => this.playSound(400, 'sine', 0.05, 0.1), 150);
+        } else if (type === 'LAUNCHER') {
+            // Deep thump
+            this.playSound(40, 'triangle', 0.6, 0.6);
+            this.playSound(60, 'sine', 0.4, 0.4);
+            // Low rumble boost
+            const low = this.audioCtx.createOscillator();
+            const lowG = this.audioCtx.createGain();
+            low.frequency.value = 30;
+            lowG.gain.value = 0.5;
+            lowG.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.5);
+            low.connect(lowG); lowG.connect(this.audioCtx.destination);
+            low.start(); low.stop(this.audioCtx.currentTime + 0.5);
+        }
     }
 
     playMusic() {
@@ -657,6 +924,7 @@ export class DoomManager {
 
         this.hud.innerHTML = `
             <div style="position:absolute; bottom:20px; left:20px; pointer-events:none;">
+                <div style="font-size:32px; color:#00ff88; margin-bottom:10px;">HP: <span id="doom-hp">100</span></div>
                 <div>SCORE: <span id="doom-score">0</span></div>
                 <div>WAVE: <span id="doom-wave">1</span>/5</div>
                 <div style="margin-top:10px; font-size:18px;">WEAPON: <span id="doom-weapon">BLASTER</span></div>
@@ -668,54 +936,48 @@ export class DoomManager {
     updateHUD() {
         if (!this.hud) return;
         const w = this.weapons[this.currentWeaponIdx];
-        const scoreEl = document.getElementById('doom-score');
-        const waveEl = document.getElementById('doom-wave');
-        const weaponEl = document.getElementById('doom-weapon');
+        const hp = Math.ceil(this.playerHealth);
+        const score = this.score;
+        const wave = this.wave;
+        const weaponName = w.name;
+        const ammo = w.ammo;
 
-        if (scoreEl) scoreEl.innerText = this.score;
-        if (waveEl) waveEl.innerText = `${this.wave}/5`;
-        if (weaponEl) {
-            weaponEl.innerText = w.name;
-            weaponEl.style.color = '#' + new THREE.Color(w.color).getHexString();
-        }
-    }
-
-    shoot() {
-        if (!this.active) return;
-        const w = this.weapons[this.currentWeaponIdx];
-        const now = Date.now();
-        if (now - w.lastShot < w.cooldown) return;
-        w.lastShot = now;
-
-        this.weaponRecoil = 0.2;
-        this.muzzleLight.intensity = 5;
-        setTimeout(() => { if (this.muzzleLight) this.muzzleLight.intensity = 0; }, 50);
-
-        // Sounds
-        if (w.name === "BLASTER") this.playSound(800, 'sine', 0.1, 0.3);
-        if (w.name === "SHOTGUN") {
-            this.playSound(100, 'sawtooth', 0.2, 0.5);
-            this.playSound(200, 'square', 0.1, 0.3);
-            console.log("Shotgun fired multiple times!"); // Debug log for shotgun fire
-        }
-        if (w.name === "LAUNCHER") {
-            this.playSound(60, 'triangle', 0.5, 0.5);
-        }
-
-        if (w.type === 'hitscan') {
-            this.fireHitscan(w);
-        } else if (w.type === 'spread') {
-            // SCATTER SHOT: VISIBLE SPREAD
-            // We fire 1 central shot + 14 scattered shots
-            this.fireHitscan(w, 0);
-            for (let i = 0; i < 14; i++) {
-                // Increased spread factor to 0.15 for distinct shotgun feel
-                this.fireHitscan(w, 0.15);
+        // PERFORMANCE: ONLY UPDATE CHANGED ELEMENTS
+        if (this.lastHUDState.hp !== hp) {
+            const el = document.getElementById('doom-hp');
+            if (el) {
+                el.innerText = hp;
+                el.style.color = hp < 30 ? '#ff0000' : '#00ff88';
             }
-        } else if (w.type === 'projectile') {
-            this.fireProjectile(w);
+            this.lastHUDState.hp = hp;
+        }
+
+        if (this.lastHUDState.score !== score) {
+            const el = document.getElementById('doom-score');
+            if (el) el.innerText = score;
+            this.lastHUDState.score = score;
+        }
+
+        if (this.lastHUDState.wave !== wave) {
+            const el = document.getElementById('doom-wave');
+            if (el) el.innerText = `${wave}/5`;
+            this.lastHUDState.wave = wave;
+        }
+
+        const ammoStr = ammo === -1 ? "∞" : ammo;
+        const stateStr = `${weaponName}_${ammoStr}`;
+        if (this.lastHUDState.weaponState !== stateStr) {
+            const el = document.getElementById('doom-weapon');
+            if (el) {
+                el.innerText = `${weaponName} [${ammoStr}]`;
+                el.style.color = '#' + new THREE.Color(w.color).getHexString();
+            }
+            this.lastHUDState.weaponState = stateStr;
         }
     }
+
+    // Removed second shoot method
+
 
     createWeaponMesh() {
         if (this.weaponMesh) this.camera.remove(this.weaponMesh);
