@@ -93,6 +93,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         ghost.classList.add('hidden');
       }
     };
+
+    mainViewer.onBaseSizeChange = (newBaseSize) => {
+      sizeSlider.value = newBaseSize;
+    };
+    compareViewer.onBaseSizeChange = (newBaseSize) => {
+      sizeSlider.value = newBaseSize;
+    };
   }
 
   // 2. Load Gallery
