@@ -11,6 +11,18 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/loaders/PLYLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/PLYLoader.js"
+      }
+    }
+    </script>
+    <link rel="icon" type="image/png" href="./public/favicon.png">
+    <link rel="shortcut icon" href="./public/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="./public/favicon.png">
 </head>
 
 <body>
@@ -50,7 +62,7 @@
                     <button id="btn-about" class="minimal-btn">ABOUT</button>
                     <button id="btn-toggle-info" class="minimal-btn">HIDE INFO</button>
                     <span class="status-dot"></span>
-                    <span class="status-text">SYSTEM ONLINE</span>
+                    <span id="fps-counter" class="fps-value">-- FPS</span>
                 </div>
             </header>
 
@@ -83,9 +95,47 @@
             <!-- Color Legend (Moved to global UI layer) -->
             <div class="color-legend">
                 <button id="btn-toggle-pulse" class="pulse-btn">FLOW: OFF</button>
-                <span class="legend-label">OUTPUT</span>
-                <div class="gradient-bar"></div>
-                <span class="legend-label">INPUT</span>
+                <div class="palette-container">
+                    <span class="legend-label">OUTPUT</span>
+                    <div id="palette-trigger" class="gradient-bar"></div>
+                    <span class="legend-label">INPUT</span>
+
+                    <!-- Palette Selection Menu -->
+                    <div id="palette-menu" class="palette-menu hidden">
+                        <div class="palette-option" data-palette="classic">
+                            <span class="palette-name">CLASSIC PULSE</span>
+                            <div class="palette-preview classic"></div>
+                        </div>
+                        <div class="palette-option" data-palette="stockholm">
+                            <span class="palette-name">STOCKHOLM</span>
+                            <div class="palette-preview stockholm"></div>
+                        </div>
+                        <div class="palette-option" data-palette="copenhagen">
+                            <span class="palette-name">COPENHAGEN</span>
+                            <div class="palette-preview copenhagen"></div>
+                        </div>
+                        <div class="palette-option" data-palette="helsinki">
+                            <span class="palette-name">HELSINKI</span>
+                            <div class="palette-preview helsinki"></div>
+                        </div>
+                        <div class="palette-option" data-palette="berlin">
+                            <span class="palette-name">BERLIN</span>
+                            <div class="palette-preview berlin"></div>
+                        </div>
+                        <div class="palette-option" data-palette="kyoto">
+                            <span class="palette-name">KYOTO</span>
+                            <div class="palette-preview kyoto"></div>
+                        </div>
+                        <div class="palette-option" data-palette="brooklyn">
+                            <span class="palette-name">BROOKLYN</span>
+                            <div class="palette-preview brooklyn"></div>
+                        </div>
+                        <div class="palette-option" data-palette="malmo">
+                            <span class="palette-name">MALMO</span>
+                            <div class="palette-preview malmo"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- Right Panel: Artifact Details -->
             <aside class="artifact-details">
@@ -162,11 +212,169 @@
 
                 <!-- Shared Controls (Bottom) -->
                 <div class="glass-panel controls-panel">
-                    <div class="controls">
-                        <button id="btn-spin" class="cyber-btn active">AUTO-ROTATE</button>
-                        <button id="btn-reset" class="cyber-btn">RESET VIEW</button>
+                    <div class="controls-column">
+                        <!-- Row 0: Actions -->
+                        <div class="control-row">
+                            <button id="btn-spin" class="cyber-btn active">AUTO-ROTATE</button>
+                            <button id="btn-pan" class="cyber-btn active">AUTO-PAN</button>
+                            <button id="btn-reset" class="cyber-btn">RESET VIEW</button>
+                        </div>
+
+                        <!-- Sub-Section Toggles -->
+                        <div class="tab-row">
+                            <button id="btn-movement" class="accordion-toggle">
+                                MOVEMENT
+                                <svg class="arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                    <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                            <button id="btn-perf" class="accordion-toggle">
+                                PERFORMANCE
+                                <svg class="arrow" width="10" height="6" viewBox="0 0 10 6" fill="none">
+                                    <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Movement Section -->
+                        <div id="movement-controls" class="accordion-content">
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="point-size-slider">NODE SIZE</label>
+                                    <div class="slider-container">
+                                        <input type="range" id="point-size-slider" min="0.001" max="0.1" step="0.001"
+                                            value="0.04" />
+                                        <div id="size-ghost" class="ghost-thumb hidden"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="lfo-slider">LFO</label>
+                                    <input type="range" id="lfo-slider" min="0" max="1.0" step="0.01" value="0.2" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="lfo-speed">SPD</label>
+                                    <input type="range" id="lfo-speed" min="0.1" max="5.0" step="0.1" value="3.5" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="pan-speed">PAN SPD</label>
+                                    <input type="range" id="pan-speed" min="0" max="1.0" step="0.01" value="0" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="view-height">HEIGHT</label>
+                                    <input type="range" id="view-height" min="-20" max="40" step="0.5" value="0" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="rot-speed">ROT SPD</label>
+                                    <input type="range" id="rot-speed" min="0.1" max="5.0" step="0.1" value="0.2" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <button id="btn-record" class="action-btn secondary full-width">RECORD ATTRACT</button>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label>PAN RANGE</label>
+                                    <div class="dual-range-container">
+                                        <div class="range-track" id="pan-track"></div>
+                                        <input type="range" id="pan-limit-min" min="-20" max="40" step="1" value="3" />
+                                        <input type="range" id="pan-limit-max" min="-20" max="40" step="1" value="9" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PERF Section -->
+                        <div id="perf-controls" class="accordion-content">
+                            <!-- Distances -->
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="line-dist-slider">LINE DIST</label>
+                                    <input type="range" id="line-dist-slider" min="0" max="100" step="1" value="100" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="node-dist-slider">NODE DIST</label>
+                                    <input type="range" id="node-dist-slider" min="0" max="100" step="1" value="100" />
+                                </div>
+                            </div>
+                            <!-- Densities -->
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="line-density-slider">LINE DENS</label>
+                                    <input type="range" id="line-density-slider" min="0" max="100" step="1"
+                                        value="100" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="node-density-slider">NODE DENS</label>
+                                    <input type="range" id="node-density-slider" min="0" max="100" step="1"
+                                        value="100" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="summarize-thin">THINNING</label>
+                                    <input type="range" id="summarize-thin" min="0" max="1.0" step="0.05" value="0.4" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="xor-density-slider">XOR DENSITY</label>
+                                    <input type="range" id="xor-density-slider" min="0" max="100" step="1" value="62" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label for="color-infl-slider">COLOR INFL</label>
+                                    <input type="range" id="color-infl-slider" min="0" max="100" step="1" value="90" />
+                                </div>
+                                <div class="control-group">
+                                    <label for="line-opacity-slider">LINE OPAC</label>
+                                    <input type="range" id="line-opacity-slider" min="0" max="1.0" step="0.01"
+                                        value="0.4" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="node-satur-slider">NODE SATUR</label>
+                                    <input type="range" id="node-satur-slider" min="0" max="1.0" step="0.01"
+                                        value="0.5" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label for="node-opacity-slider">NODE OPAC</label>
+                                    <input type="range" id="node-opacity-slider" min="0" max="1.0" step="0.01"
+                                        value="1.0" />
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group">
+                                    <label>NODE BLEND</label>
+                                    <button id="btn-node-blend" class="cyber-btn mini">NORMAL</button>
+                                </div>
+                                <div class="control-group">
+                                    <label>LINE BLEND</label>
+                                    <button id="btn-line-blend" class="cyber-btn mini">NORMAL</button>
+                                </div>
+                            </div>
+                            <div class="control-row">
+                                <div class="control-group full-width">
+                                    <label>COLOR INVERSION</label>
+                                    <button id="btn-invert-influence" class="cyber-btn mini full-width">DIRECT
+                                        INFLUENCE</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
 
                 <!-- Loading Overlay -->
                 <div id="loader" class="loader-overlay hidden">
