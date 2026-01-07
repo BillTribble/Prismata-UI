@@ -157,7 +157,7 @@ export class CrystalViewer {
     this.xorWire = null;
     this.xorPercentage = 0.02;
 
-    this.baseSize = 0.04;
+    this.baseSize = 0.015;
     this.lfoAmount = 0.2;
     this.lfoSpeed = 3.5;
 
@@ -247,9 +247,9 @@ export class CrystalViewer {
       this.scene.add(this.crystalGroup);
 
       // Relative node size: "smaller if there are less nodes"
-      // Base size for 10k nodes is ~0.04.
+      // Base size for 10k nodes is now 0.015.
       // Scaling linearly with node count. Min 0.005, Max 0.1
-      const nodeScaling = Math.max(0.005, Math.min(0.1, (stats.nodes / 10000) * 0.04));
+      const nodeScaling = Math.max(0.005, Math.min(0.1, (stats.nodes / 10000) * 0.015));
       this.setBaseSize(nodeScaling);
 
       // Update UI slider if possible (via callback)
