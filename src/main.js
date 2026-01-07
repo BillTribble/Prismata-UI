@@ -246,9 +246,9 @@ export class CrystalViewer {
       this.crystalGroup = meshResult;
       this.scene.add(this.crystalGroup);
 
-      // Inverted node size: "High points = Low size"
-      // Baseline: 10k nodes targets ~0.016
-      const nodeScaling = Math.max(0.005, Math.min(0.08, (8000 / stats.nodes) * 0.02));
+      // Inverted node size with square-root curve for better scaling balance
+      // Targets ~0.028 for 5k node models (Hourglass), ~0.008 for 60k+ node models (Colossus)
+      const nodeScaling = Math.max(0.006, Math.min(0.08, 2.0 / Math.sqrt(stats.nodes)));
       this.setBaseSize(nodeScaling);
 
       // Sync the UI slider specifically to this new BASE size
