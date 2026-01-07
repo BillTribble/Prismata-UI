@@ -97,6 +97,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadGallery();
   setupControls();
 
+  // Try to load default attract mode
+  try {
+    const attractRes = await smartFetch('./public/attract_mode.json');
+    if (attractRes.ok) {
+      const data = await attractRes.json();
+      if (Array.isArray(data) && data.length > 0) {
+        recordingBuffer = data;
+        btnPlay.classList.remove('hidden');
+        btnSave.classList.remove('hidden');
+        console.log("Default attract mode loaded.");
+      }
+    }
+  } catch (e) {
+    // Ignore if not found
+  }
+
   // 3. Setup Search & Filters
   setupSearch();
 
@@ -668,6 +684,8 @@ function setupControls() {
 // Record Attract Logic
 const btnRecord = document.getElementById('btn-record');
 const btnPlay = document.getElementById('btn-play-attract');
+const btnSave = document.getElementById('btn-save-attract');
+const btnLoad = document.getElementById('btn-load-attract');
 
 if (btnRecord) {
   btnRecord.addEventListener('click', () => {
@@ -705,6 +723,7 @@ if (btnRecord) {
 
       if (recordingBuffer.length > 0) {
         btnPlay.classList.remove('hidden');
+        btnSave.classList.remove('hidden');
         const data = JSON.stringify(recordingBuffer);
         navigator.clipboard.writeText(data).then(() => {
           showToast("Session data copied to clipboard!");
@@ -713,6 +732,40 @@ if (btnRecord) {
           showToast("Failed to copy session.", true);
         });
       }
+    }
+  });
+}
+
+if (btnSave) {
+  btnSave.addEventListener('click', () => {
+    if (recordingBuffer.length === 0) return;
+    const blob = new Blob([JSON.stringify(recordingBuffer)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prismata_attract_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Attract mode file downloaded.");
+  });
+}
+
+if (btnLoad) {
+  btnLoad.addEventListener('click', () => {
+    const input = prompt("PASTE ATTRACT JSON HERE:");
+    if (!input) return;
+    try {
+      const data = JSON.parse(input);
+      if (Array.isArray(data)) {
+        recordingBuffer = data;
+        btnPlay.classList.remove('hidden');
+        btnSave.classList.remove('hidden');
+        showToast("Attract sequence loaded!");
+      } else {
+        showToast("Invalid data format.", true);
+      }
+    } catch (e) {
+      showToast("Failed to parse JSON.", true);
     }
   });
 }
