@@ -246,6 +246,15 @@ export class CrystalViewer {
       this.crystalGroup = meshResult;
       this.scene.add(this.crystalGroup);
 
+      // Relative node size: "smaller if there are less nodes"
+      // Base size for 10k nodes is ~0.04.
+      // Scaling linearly with node count. Min 0.005, Max 0.1
+      const nodeScaling = Math.max(0.005, Math.min(0.1, (stats.nodes / 10000) * 0.04));
+      this.setBaseSize(nodeScaling);
+
+      // Update UI slider if possible (via callback)
+      if (this.onUpdateUI) this.onUpdateUI(nodeScaling);
+
       this.fitCameraToSelection();
 
       return stats;

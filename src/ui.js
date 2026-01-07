@@ -44,8 +44,20 @@ let isInverted = true;
 
 // Recording State
 let isRecording = false;
+let isPlaying = false;
 let recordingBuffer = [];
 let recordingInterval = null;
+let recordingStartTime = 0;
+let playbackTimeout = null;
+
+function recordInteraction(type, value) {
+  if (!isRecording) return;
+  recordingBuffer.push({
+    time: Date.now() - recordingStartTime,
+    type,
+    value
+  });
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -250,6 +262,9 @@ async function loadGallery() {
           document.querySelectorAll('.crystal-item').forEach(el => el.classList.remove('active'));
           item.classList.add('active');
           handleLoadCrystal(item.dataset, activeSlot);
+
+          recordInteraction('model-load', { url: item.dataset.url, slot: activeSlot });
+
           // Close mobile menu if open
           document.querySelector('.gallery-nav').classList.remove('active');
         });
@@ -261,11 +276,21 @@ async function loadGallery() {
       navList.appendChild(groupDiv);
     });
 
-    // Auto-select first item
+    // Auto-select GoogleNet "The Lattice" if found, else first item
     setTimeout(() => {
-      const firstItem = navList.querySelector('.crystal-item');
-      if (firstItem) firstItem.click();
-    }, 100);
+      const items = Array.from(navList.querySelectorAll('.crystal-item'));
+      const target = items.find(item =>
+        item.dataset.name.includes('The Lattice') ||
+        item.dataset.modelName.includes('GoogleNet')
+      );
+      if (target) {
+        target.click();
+        // Scroll to it?
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } else if (items.length > 0) {
+        items[0].click();
+      }
+    }, 500);
 
   } catch (err) {
     console.error("Failed to load manifest:", err);
@@ -279,7 +304,7 @@ async function handleLoadCrystal(data, slot) {
   const ui = slot === 'main' ? uiElements.main : uiElements.compare;
   const viewer = slot === 'main' ? mainViewer : compareViewer;
 
-  if (ui.superTitle) ui.superTitle.textContent = data.modelName || 'UNKNOWN CLASS';
+  if (ui.superTitle) ui.superTitle.textContent = `${data.modelName || 'UNKNOWN'} (${data.year || '----'})`;
   ui.title.textContent = data.name;
   ui.type.textContent = data.type;
 
@@ -642,19 +667,22 @@ function setupControls() {
 
 // Record Attract Logic
 const btnRecord = document.getElementById('btn-record');
+const btnPlay = document.getElementById('btn-play-attract');
+
 if (btnRecord) {
   btnRecord.addEventListener('click', () => {
     if (!isRecording) {
       // Start Recording
       isRecording = true;
       recordingBuffer = [];
+      recordingStartTime = Date.now();
       btnRecord.textContent = "STOP RECORDING";
       btnRecord.classList.add('active');
-      showToast("Recording camera path...");
+      showToast("Recording session (clicks, camera, settings)...");
 
       recordingInterval = setInterval(() => {
         if (mainViewer && mainViewer.camera && mainViewer.controls) {
-          recordingBuffer.push({
+          recordInteraction('camera', {
             pos: {
               x: parseFloat(mainViewer.camera.position.x.toFixed(3)),
               y: parseFloat(mainViewer.camera.position.y.toFixed(3)),
@@ -667,7 +695,7 @@ if (btnRecord) {
             }
           });
         }
-      }, 50); // 20fps recording
+      }, 100); // 10fps for demo efficiency
     } else {
       // Stop Recording
       isRecording = false;
@@ -676,16 +704,107 @@ if (btnRecord) {
       btnRecord.classList.remove('active');
 
       if (recordingBuffer.length > 0) {
+        btnPlay.classList.remove('hidden');
         const data = JSON.stringify(recordingBuffer);
         navigator.clipboard.writeText(data).then(() => {
-          showToast("Camera path copied to clipboard!");
+          showToast("Session data copied to clipboard!");
         }).catch(err => {
           console.error("Failed to copy path:", err);
-          showToast("Failed to copy path.", true);
+          showToast("Failed to copy session.", true);
         });
       }
     }
   });
+}
+
+if (btnPlay) {
+  btnPlay.addEventListener('click', () => {
+    if (isPlaying) {
+      isPlaying = false;
+      if (playbackTimeout) clearTimeout(playbackTimeout);
+      btnPlay.textContent = "PLAY ATTRACT";
+      btnPlay.classList.remove('active');
+      showToast("Playback stopped.");
+      return;
+    }
+
+    if (recordingBuffer.length === 0) {
+      showToast("Nothing recorded yet.", true);
+      return;
+    }
+
+    isPlaying = true;
+    btnPlay.textContent = "STOP PLAYBACK";
+    btnPlay.classList.add('active');
+    showToast("Starting playback...");
+
+    startPlayback(0);
+  });
+}
+
+function startPlayback(index) {
+  if (!isPlaying || index >= recordingBuffer.length) {
+    if (index >= recordingBuffer.length) {
+      showToast("Playback complete.");
+      isPlaying = false;
+      btnPlay.textContent = "PLAY ATTRACT";
+      btnPlay.classList.remove('active');
+    }
+    return;
+  }
+
+  const event = recordingBuffer[index];
+  const nextEvent = recordingBuffer[index + 1];
+  const delay = nextEvent ? (nextEvent.time - event.time) : 0;
+
+  // Execute Event
+  executePlaybackEvent(event);
+
+  playbackTimeout = setTimeout(() => {
+    startPlayback(index + 1);
+  }, delay);
+}
+
+function executePlaybackEvent(event) {
+  switch (event.type) {
+    case 'camera':
+      if (mainViewer && mainViewer.camera && mainViewer.controls) {
+        mainViewer.camera.position.set(event.value.pos.x, event.value.pos.y, event.value.pos.z);
+        mainViewer.controls.target.set(event.value.target.x, event.value.target.y, event.value.target.z);
+        mainViewer.controls.update();
+      }
+      break;
+    case 'model-load':
+      const item = Array.from(document.querySelectorAll('.crystal-item')).find(el => el.dataset.url === event.value.url);
+      if (item) {
+        document.querySelectorAll('.crystal-item').forEach(el => el.classList.remove('active'));
+        item.classList.add('active');
+        handleLoadCrystal(item.dataset, event.value.slot);
+      }
+      break;
+    case 'setting':
+      const el = document.getElementById(event.value.id);
+      if (el) {
+        el.value = event.value.val;
+        el.dispatchEvent(new Event('input'));
+      }
+      break;
+    case 'btn-click':
+      const btn = document.getElementById(event.value.id);
+      if (btn) {
+        if (event.value.id === 'btn-toggle-pulse') {
+          // Force state match
+          const isActive = btn.classList.contains('active');
+          if (isActive !== event.value.active) btn.click();
+        } else if (event.value.id === 'btn-node-blend' || event.value.id === 'btn-line-blend') {
+          const currentMode = btn.textContent.toLowerCase();
+          if (currentMode !== event.value.mode) btn.click();
+        } else {
+          btn.click();
+        }
+      }
+      break;
+  }
 }
 
 // Easter Egg Toggle
@@ -712,6 +831,7 @@ if (btnPulse) {
     const isActive = btnPulse.classList.toggle('active');
     btnPulse.textContent = isActive ? "FLOW: ON" : "FLOW: OFF";
     if (mainViewer) mainViewer.setPulse(isActive);
+    recordInteraction('btn-click', { id: 'btn-toggle-pulse', active: isActive });
   });
 }
 
@@ -722,6 +842,7 @@ if (pointSizeSlider) {
     const size = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setBaseSize(size);
     if (compareViewer) compareViewer.setBaseSize(size);
+    recordInteraction('setting', { id: 'point-size-slider', val: size });
   });
 }
 
@@ -732,6 +853,7 @@ if (heightSlider) {
     const val = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setManualHeight(val);
     if (compareViewer) compareViewer.setManualHeight(val);
+    recordInteraction('setting', { id: 'view-height', val: val });
   });
 }
 
@@ -742,6 +864,7 @@ if (lfoSlider) {
     const amount = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setLFOAmount(amount);
     if (compareViewer) compareViewer.setLFOAmount(amount);
+    recordInteraction('setting', { id: 'lfo-slider', val: amount });
   });
 }
 
@@ -752,6 +875,7 @@ if (lfoSpeedSlider) {
     const speed = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setLFOSpeed(speed);
     if (compareViewer) compareViewer.setLFOSpeed(speed);
+    recordInteraction('setting', { id: 'lfo-speed', val: speed });
   });
 }
 
@@ -762,6 +886,7 @@ if (lineDistSlider) {
     const dist = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setLineDist(dist);
     if (compareViewer) compareViewer.setLineDist(dist);
+    recordInteraction('setting', { id: 'line-dist-slider', val: dist });
   });
 }
 
@@ -771,6 +896,7 @@ if (nodeDistSlider) {
     const dist = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setNodeDist(dist);
     if (compareViewer) compareViewer.setNodeDist(dist);
+    recordInteraction('setting', { id: 'node-dist-slider', val: dist });
   });
 }
 
@@ -780,6 +906,7 @@ if (lineDensitySlider) {
     const val = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setLineDensity(val);
     if (compareViewer) compareViewer.setLineDensity(val);
+    recordInteraction('setting', { id: 'line-density-slider', val: val });
   });
 }
 
@@ -789,6 +916,7 @@ if (nodeDensitySlider) {
     const val = parseFloat(e.target.value);
     if (mainViewer) mainViewer.setNodeDensity(val);
     if (compareViewer) compareViewer.setNodeDensity(val);
+    recordInteraction('setting', { id: 'node-density-slider', val: val });
   });
 }
 
@@ -855,6 +983,7 @@ if (btnNodeBlend) {
     const mode = isAdditive ? 'additive' : 'normal';
     if (mainViewer) mainViewer.setNodeBlending(mode);
     if (compareViewer) compareViewer.setNodeBlending(mode);
+    recordInteraction('btn-click', { id: 'btn-node-blend', mode });
   });
 }
 
@@ -866,6 +995,7 @@ if (btnLineBlend) {
     const mode = isAdditive ? 'additive' : 'normal';
     if (mainViewer) mainViewer.setLineBlending(mode);
     if (compareViewer) compareViewer.setLineBlending(mode);
+    recordInteraction('btn-click', { id: 'btn-line-blend', mode });
   });
 }
 
