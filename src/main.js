@@ -9,11 +9,14 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
  */
 export async function smartFetch(url) {
   let res = await fetch(url);
-  if (!res.ok && !url.includes('public/')) {
-    // If it fails and doesn't already have public/, try prepending it
+  if (res.ok) return res;
+
+  if (!url.includes('public/')) {
     const fallbackUrl = url.startsWith('./')
       ? url.replace('./', './public/')
       : `public/${url}`;
+
+    console.log(`SmartFetch: Falling back from ${url} to ${fallbackUrl}`);
     const fallbackRes = await fetch(fallbackUrl);
     if (fallbackRes.ok) return fallbackRes;
   }
