@@ -3,6 +3,23 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
+
+/**
+ * Helper to fetch assets with a fallback for unbuilt GitHub Pages deployments
+ */
+export async function smartFetch(url) {
+  let res = await fetch(url);
+  if (!res.ok && !url.includes('public/')) {
+    // If it fails and doesn't already have public/, try prepending it
+    const fallbackUrl = url.startsWith('./')
+      ? url.replace('./', './public/')
+      : `public/${url}`;
+    const fallbackRes = await fetch(fallbackUrl);
+    if (fallbackRes.ok) return fallbackRes;
+  }
+  return res;
+}
+
 // Global FPS Tracking
 let fpsLastTime = performance.now();
 let fpsFrames = 0;
@@ -219,7 +236,7 @@ export class CrystalViewer {
     this.xorWire = null;
 
     try {
-      const response = await fetch(url);
+      const response = await smartFetch(url);
       const buffer = await response.arrayBuffer();
       const { meshResult, stats } = this.parsePLY(buffer);
 

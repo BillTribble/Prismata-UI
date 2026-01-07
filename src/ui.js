@@ -1,4 +1,4 @@
-import { CrystalViewer } from './main.js';
+import { CrystalViewer, smartFetch } from './main.js';
 
 // DOM Elements
 const navList = document.getElementById('model-list');
@@ -201,7 +201,7 @@ function setActiveSlot(slot) {
 async function loadGallery() {
   try {
     // Load Manifest
-    const res = await fetch('./crystals/manifest.json');
+    const res = await smartFetch('./crystals/manifest.json');
     let models = await res.json();
 
     // Sort by Year (Descending: Recent -> Oldest)
@@ -291,7 +291,7 @@ async function handleLoadCrystal(data, slot) {
 
     let infoText = "";
     try {
-      const res = await fetch(`./crystals/${data.modelId}/INFO.md`);
+      const res = await smartFetch(`./crystals/${data.modelId}/INFO.md`);
       if (res.ok) {
         const text = await res.text();
         // Vite fallback protection
