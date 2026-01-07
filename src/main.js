@@ -247,8 +247,8 @@ export class CrystalViewer {
       this.scene.add(this.crystalGroup);
 
       // Inverted node size with square-root curve for better scaling balance
-      // Targets ~0.028 for 5k node models (Hourglass), ~0.008 for 60k+ node models (Colossus)
-      const nodeScaling = Math.max(0.006, Math.min(0.08, 2.0 / Math.sqrt(stats.nodes)));
+      // Targets ~0.028 for Hourglass (~3100 nodes), keeps Colossus small (~0.006)
+      const nodeScaling = Math.max(0.005, Math.min(0.08, 1.56 / Math.sqrt(stats.nodes)));
       this.setBaseSize(nodeScaling);
 
       // Sync the UI slider specifically to this new BASE size
