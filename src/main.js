@@ -1003,6 +1003,9 @@ export class CrystalViewer {
 
   setBaseSize(size) {
     this.baseSize = size;
+    if (this.pointMaterial) {
+      this.pointMaterial.size = size;
+    }
   }
 
   setLFOAmount(amount) {
