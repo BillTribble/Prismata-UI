@@ -296,8 +296,8 @@ async function loadGallery() {
     setTimeout(() => {
       const items = Array.from(navList.querySelectorAll('.crystal-item'));
       const target = items.find(item =>
-        item.dataset.name.includes('The Lattice') ||
-        item.dataset.modelName.includes('GoogleNet')
+        item.dataset.name.includes('The Twin Spires') ||
+        item.dataset.modelName.includes('CLIP')
       );
       if (target) {
         target.click();
