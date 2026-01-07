@@ -787,6 +787,16 @@ input[type=range]::-moz-range-thumb {
     margin-bottom: 4px;
 }
 
+.info-year {
+    font-size: 0.8rem;
+    font-family: var(--font-header);
+    color: var(--color-primary);
+    opacity: 0.7;
+    letter-spacing: 1px;
+    margin-top: -4px;
+    margin-bottom: 15px;
+}
+
 .minimal-btn {
     background: transparent;
     border: 1px solid rgba(0, 243, 255, 0.3);

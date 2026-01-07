@@ -19,6 +19,7 @@ const uiElements = {
     desc: document.getElementById('crystal-desc-a'),
     nodes: document.getElementById('meta-nodes-a'),
     links: document.getElementById('meta-links-a'),
+    year: document.getElementById('model-year-a'),
   },
   compare: {
     superTitle: document.getElementById('model-name-b'),
@@ -27,6 +28,7 @@ const uiElements = {
     desc: document.getElementById('crystal-desc-b'),
     nodes: document.getElementById('meta-nodes-b'),
     links: document.getElementById('meta-links-b'),
+    year: document.getElementById('model-year-b'),
   }
 };
 
@@ -240,9 +242,7 @@ async function loadGallery() {
 
     models.forEach((model, index) => {
       const groupDiv = document.createElement('div');
-      groupDiv.className = 'model-group';
-      // Open grouping for recent models by default? Or just first?
-      if (index === 0) groupDiv.classList.add('active');
+      groupDiv.className = 'model-group active';
 
       const groupTitle = document.createElement('div');
       groupTitle.className = 'model-title';
@@ -320,7 +320,8 @@ async function handleLoadCrystal(data, slot) {
   const ui = slot === 'main' ? uiElements.main : uiElements.compare;
   const viewer = slot === 'main' ? mainViewer : compareViewer;
 
-  if (ui.superTitle) ui.superTitle.textContent = `${data.modelName || 'UNKNOWN'} (${data.year || '----'})`;
+  if (ui.superTitle) ui.superTitle.textContent = data.modelName || 'UNKNOWN';
+  if (ui.year) ui.year.textContent = data.year || '----';
   ui.title.textContent = data.name;
   ui.type.textContent = data.type;
 
