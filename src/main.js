@@ -285,6 +285,16 @@ export class CrystalViewer {
     this.camera.position.copy(pos);
     this.controls.update();
 
+    // Dynamically adjust visibility/fog limits based on model size
+    // ensures big models don't disappear and small models look crisp
+    const nearLimit = cameraDist * 1.5;
+    const farLimit = cameraDist * 3.0;
+
+    this.targetUniforms.uLineNear = nearLimit;
+    this.targetUniforms.uLineFar = farLimit;
+    this.targetUniforms.uNodeNear = nearLimit;
+    this.targetUniforms.uNodeFar = farLimit;
+
     const heightFactor = this.modelHeight / 15.0;
     const mid = this.modelBottom + ((this.panMin + this.panMax) / 2) * heightFactor;
 
@@ -503,6 +513,14 @@ export class CrystalViewer {
       const v1 = parseInt(textData[ptr++]);
       const v2 = parseInt(textData[ptr++]);
       allIndices.push(v1, v2);
+    }
+
+    if (allIndices.length === 0 && vertexCount > 0) {
+      // Fallback: Generate sequential edges if none provided (common in point-only PLYs)
+      // This ensures "The Dense Spiral" and others have visual connectivity.
+      for (let i = 0; i < vertexCount - 1; i++) {
+        allIndices.push(i, i + 1);
+      }
     }
 
     const geometry = new THREE.BufferGeometry();
