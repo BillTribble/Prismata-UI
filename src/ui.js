@@ -125,6 +125,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Ignore if not found
   }
 
+  // Auto-start playback
+  if (recordingBuffer.length > 0) {
+    setTimeout(() => {
+      startPlaybackSession();
+    }, 400); // Quick start after gallery load
+  }
+
   // Playback Pause UI
   const pauseOverlay = document.getElementById('playback-pause-overlay');
   const btnResume = document.getElementById('btn-resume-playback');
