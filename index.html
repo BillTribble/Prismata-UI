@@ -70,7 +70,7 @@
             <aside class="gallery-nav">
                 <div class="nav-header">
                     <h2>MODELS</h2>
-                    <div class="nav-controls">
+                    <div class="nav-controls" style="display: none;">
                         <label class="toggle-switch">
                             <input type="checkbox" id="compare-toggle">
                             <span class="slider"></span>
@@ -81,8 +81,16 @@
                         <input type="text" id="search-input" placeholder="SEARCH ARTIFACTS..." autocomplete="off">
                     </div>
 
-                    <div id="filter-tags" class="filter-tags">
-                        <!-- Populated by JS -->
+                    <div class="filter-accordion">
+                        <button id="btn-toggle-filters" class="accordion-toggle">
+                            <span>FILTERS</span>
+                            <span class="arrow">▼</span>
+                        </button>
+                        <div id="filter-content" class="accordion-content">
+                            <div id="filter-tags" class="filter-tags">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
                     </div>
 
                     <div class="line-deco"></div>
@@ -397,17 +405,22 @@
                     LEFT CLICK: ROTATE // RIGHT CLICK: PAN // SCROLL: ZOOM
                 </div>
             </footer>
+
+            <!-- DataVis Overlay (Top-Left of Graph Area) -->
+            <div id="datavis-overlay"
+                style="grid-area: content; position: relative; pointer-events: none; z-index: 100;">
+                <div id="playback-pause-overlay" class="playback-overlay hidden" style="pointer-events: auto;">
+                    <div class="overlay-content">
+                        <span class="pulse-icon"></span>
+                        <span class="overlay-text">PLAYBACK PAUSED</span>
+                        <button id="btn-resume-playback" class="resume-btn">RESUME</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Playback Pause Overlay -->
-    <div id="playback-pause-overlay" class="playback-overlay hidden">
-        <div class="overlay-content">
-            <span class="pulse-icon"></span>
-            <span class="overlay-text">PLAYBACK PAUSED</span>
-            <button id="btn-resume-playback" class="resume-btn">RESUME</button>
-        </div>
-    </div>
+    <!-- Playback Pause Overlay removed from here -->
 
     <!-- About Modal -->
     <div id="about-modal" class="modal-overlay hidden">

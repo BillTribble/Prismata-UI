@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load default attract mode
   try {
-    const attractRes = await smartFetch('./public/attract_mode.json');
+    const attractRes = await smartFetch('./attract_mode.json');
     if (attractRes.ok) {
       const data = await attractRes.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -119,18 +119,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btnPlay) btnPlay.classList.remove('hidden');
         if (btnSave) btnSave.classList.remove('hidden');
         console.log("Default attract mode loaded.");
+
+        // Auto-start playback
+        setTimeout(() => {
+          startPlaybackSession();
+        }, 800);
       }
     }
   } catch (e) {
     // Ignore if not found
   }
 
-  // Auto-start playback
-  if (recordingBuffer.length > 0) {
-    setTimeout(() => {
-      startPlaybackSession();
-    }, 400); // Quick start after gallery load
-  }
+  // Removed previous auto-start block
 
   // Playback Pause UI
   const pauseOverlay = document.getElementById('playback-pause-overlay');
@@ -149,6 +149,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnCloseAbout.addEventListener('click', () => {
       aboutModal.classList.add('hidden');
     });
+    // Click outside to close
+    aboutModal.addEventListener('click', (e) => {
+      if (e.target === aboutModal) {
+        aboutModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Filter Accordion
+  const btnToggleFilters = document.getElementById('btn-toggle-filters');
+  const filterContent = document.getElementById('filter-content');
+  if (btnToggleFilters && filterContent) {
+    btnToggleFilters.addEventListener('click', () => {
+      btnToggleFilters.classList.toggle('open');
+      filterContent.classList.toggle('open');
+    });
   }
 
   if (btnResume) {
@@ -159,8 +175,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Interruption Detection
   const handleInteraction = (e) => {
-    // Ignore if it's the resume button itself
-    if (e.target.closest('#btn-resume-playback')) return;
+    // Ignore if it's the resume button OR the play button itself
+    if (e.target.closest('#btn-resume-playback') || e.target.closest('#btn-play-attract')) return;
 
     if (isPlaying && !isPlaybackPaused) {
       pausePlayback();

@@ -808,10 +808,11 @@ input[type=range]::-moz-range-thumb {
 
 /* Playback Overlay */
 .playback-overlay {
-    position: fixed;
+    position: absolute;
     top: 20px;
     left: 20px;
-    z-index: 5000;
+    z-index: 10000;
+    /* Ensure it's above everything */
     pointer-events: auto;
     background: rgba(0, 10, 20, 0.8);
     backdrop-filter: blur(8px);
@@ -1728,6 +1729,26 @@ input[type=range]::-moz-range-thumb {
     min-width: 50px;
 }
 
-.accordion-content input[type="range"] {
-    height: 14px;
+/* Filter Accordion */
+.filter-accordion {
+    margin-top: 15px;
+    border: 1px solid rgba(0, 243, 255, 0.1);
+    background: rgba(0, 243, 255, 0.02);
+}
+
+.filter-accordion .accordion-toggle {
+    padding: 8px 12px;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+}
+
+.filter-accordion .accordion-content {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.filter-accordion .accordion-content.open {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
 }
