@@ -221,8 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.target.closest('#btn-resume-playback') ||
       e.target.closest('#btn-play-attract') ||
       e.target.closest('.accordion-toggle') ||
-      e.target.closest('.accordion-content') ||
-      e.target.closest('.artifact-details')) return;
+      e.target.closest('.accordion-content')) return;
 
     if (isPlaying && !isPlaybackPaused) {
       pausePlayback();
