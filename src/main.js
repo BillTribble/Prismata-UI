@@ -2,7 +2,7 @@ import { LightCycleArena } from './easterEgg.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-console.log('Deployed commit: 6f3d3acb39380f479d2f8a89efd1c25792acc53c');
+console.log('Deployed commit: 5fdb35161bada7709a622868f8768ff381a20f12');
 
 /**
  * Helper to fetch assets with a fallback for unbuilt GitHub Pages deployments
