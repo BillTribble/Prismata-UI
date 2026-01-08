@@ -585,11 +585,13 @@ function setupControls() {
   // About Modal Logic
   const btnAbout = document.getElementById('btn-about');
   const modal = document.getElementById('about-modal');
-  const btnCloseModal = document.getElementById('btn-close-modal');
+  const btnCloseModal = document.getElementById('btn-close-about');
 
   if (btnAbout && modal) {
     btnAbout.addEventListener('click', () => modal.classList.remove('hidden'));
-    btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
+    if (btnCloseModal) {
+      btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
+    }
     // Close on background click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.add('hidden');
