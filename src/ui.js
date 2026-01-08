@@ -6,6 +6,7 @@ const loader = document.getElementById('loader');
 const toggleCompare = document.getElementById('compare-toggle');
 const viewerContainer = document.getElementById('viewer-container');
 const viewCompare = document.getElementById('view-compare');
+let btnResume = null;
 
 // Panels
 const panelA = document.getElementById('panel-a');
@@ -111,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load default attract mode
   try {
-    const attractRes = await fetch('./public/attract_mode.json');
+    const attractRes = await fetch('./src/prismata_attract_1767869020832.json');
 
     if (attractRes.ok) {
       const data = await attractRes.json();
@@ -140,7 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Playback Pause UI
   const pauseOverlay = document.getElementById('playback-pause-overlay');
-  const btnResume = document.getElementById('btn-resume-playback');
+  btnResume = document.getElementById('btn-resume-playback');
   const btnAbout = document.getElementById('btn-about');
   const aboutModal = document.getElementById('about-modal');
   const btnCloseAbout = document.getElementById('btn-close-about');
@@ -181,6 +182,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (overlay) overlay.classList.remove('hidden');
     });
   }
+
+
 
   if (btnResume) {
     btnResume.addEventListener('click', () => {
@@ -770,7 +773,7 @@ function setupControls() {
 
 // Record Attract Logic
 const btnRecord = document.getElementById('btn-record');
-const btnPlay = document.getElementById('btn-play-attract');
+const btnPlay = btnRecord;
 const btnSave = document.getElementById('btn-save-attract');
 const btnLoad = document.getElementById('btn-load-attract');
 
@@ -885,9 +888,9 @@ function startPlaybackSession() {
   if (btnPlay) {
     btnPlay.textContent = "STOP ATTRACT";
     btnPlay.classList.add('active');
+    btnPlay.classList.remove('hidden');
   }
-  const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.style.display = 'none';
+  if (btnResume) btnResume.classList.add('hidden');
   showToast("Demo mode - interact to pause");
 
   startPlayback(0);
@@ -898,27 +901,38 @@ function stopPlayback() {
   isPlaybackPaused = false;
   if (playbackTimeout) clearTimeout(playbackTimeout);
   if (btnPlay) {
-    btnPlay.textContent = "PLAY ATTRACT";
+    btnPlay.textContent = "RECORD ATTRACT";
     btnPlay.classList.remove('active');
+    btnPlay.classList.remove('hidden');
   }
-  const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.style.display = 'none';
+  if (btnResume) btnResume.classList.add('hidden');
   showToast("Playback stopped.");
 }
 
 function pausePlayback() {
+  console.log('Pausing playback');
   if (!isPlaying) return;
   isPlaybackPaused = true;
   if (playbackTimeout) clearTimeout(playbackTimeout);
-  if (btnResume) btnResume.style.display = 'inline-block';
+  if (btnPlay) btnPlay.classList.add('hidden');
+  if (btnResume) {
+    console.log('Removing hidden from btnResume');
+    btnResume.classList.remove('hidden');
+    btnResume.style.fontWeight = 'bold';
+    btnResume.classList.add('pulse-appear');
+  } else {
+    console.log('btnResume is null');
+  }
 }
 
 function resumePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = false;
-  const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.style.display = 'none';
-  if (btnPlay) btnPlay.textContent = "STOP ATTRACT";
+  if (btnResume) btnResume.classList.add('hidden');
+  if (btnPlay) {
+    btnPlay.classList.remove('hidden');
+    btnPlay.textContent = "STOP ATTRACT";
+  }
   showToast("Resuming playback...");
 
   // Resume from the model we were on
@@ -1457,17 +1471,16 @@ setTimeout(() => {
   const headerStatus = document.querySelector('.status-indicator');
   if (headerStatus) {
     const btnTimeline = document.createElement('button');
+    btnTimeline.id = 'btn-timeline';
     btnTimeline.className = 'minimal-btn';
     btnTimeline.textContent = "TIMELINE VIEW";
-    btnTimeline.style.border = "1px solid var(--color-accent)";
-    btnTimeline.style.color = "var(--color-accent)";
-    btnTimeline.style.fontWeight = "bold";
-    btnTimeline.style.boxShadow = "0 0 10px rgba(255, 0, 85, 0.2)";
+    btnTimeline.style.border = "1px solid rgba(0, 243, 255, 0.3)";
 
     btnTimeline.addEventListener('click', enterTimelineMode);
 
+    console.log('Timeline View button created with cyan color');
 
-    headerStatus.insertBefore(btnTimeline, headerStatus.firstChild);
+    headerStatus.insertBefore(btnTimeline, btnResume.nextSibling);
   }
 }, 1000); // Wait for DOM
 

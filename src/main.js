@@ -278,6 +278,10 @@ export class CrystalViewer {
     let cameraDist = (maxDim / 2) / Math.tan(fovRad / 2);
     cameraDist *= 1.4;
 
+    // Temporarily disable damping to prevent lerp pause
+    const originalDamping = this.controls.enableDamping;
+    this.controls.enableDamping = false;
+
     this.controls.target.copy(center);
     const direction = new THREE.Vector3(1, 0.6, 1).normalize();
     const pos = center.clone().add(direction.multiplyScalar(cameraDist));
@@ -302,6 +306,9 @@ export class CrystalViewer {
     this.camera.position.y += deltaY;
     this.controls.target.y += deltaY;
     this.controls.update();
+
+    // Restore damping
+    this.controls.enableDamping = originalDamping;
 
     this.lastPanY = mid;
     this.panTime = 0;
