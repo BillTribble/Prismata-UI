@@ -111,25 +111,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load default attract mode
   try {
-    const attractRes = await smartFetch('./attract_mode.json');
-    // Fallback if ./ fails
-    if (!attractRes.ok) {
-      console.warn("Attract mode ./attract_mode.json failed, trying /attract_mode.json");
-    }
-    const finalRes = attractRes.ok ? attractRes : await fetch('/attract_mode.json');
+    const attractRes = await fetch('./public/attract_mode.json');
 
-    if (finalRes.ok) {
-      const data = await finalRes.json();
+
+    if (attractRes.ok) {
+      const data = await attractRes.json();
       if (Array.isArray(data) && data.length > 0) {
         recordingBuffer = data;
         if (btnPlay) btnPlay.classList.remove('hidden');
         if (btnSave) btnSave.classList.remove('hidden');
-        console.log("Default attract mode loaded.");
+        console.log("✓ Attract mode loaded:", data.length, "events");
 
         // Auto-start playback
         setTimeout(() => {
+          console.log("→ Auto-starting playback");
           startPlaybackSession();
-        }, 800);
+        }, 1200);
       }
     }
   } catch (e) {
@@ -170,6 +167,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnToggleFilters.addEventListener('click', () => {
       btnToggleFilters.classList.toggle('open');
       filterContent.classList.toggle('open');
+    });
+  }
+
+  // Timeline Button
+  const btnTimeline = document.getElementById('btn-timeline');
+  if (btnTimeline) {
+    btnTimeline.addEventListener('click', () => {
+      const overlay = document.getElementById('timeline-overlay');
+      if (overlay) overlay.classList.remove('hidden');
     });
   }
 
@@ -587,15 +593,7 @@ function setupControls() {
     });
   }
 
-  // Pan Speed Slider
-  const panSpeedSlider = document.getElementById('pan-speed');
-  if (panSpeedSlider) {
-    panSpeedSlider.addEventListener('input', (e) => {
-      const speed = parseFloat(e.target.value);
-      if (mainViewer) mainViewer.setPanSpeed(speed);
-      if (compareViewer) compareViewer.setPanSpeed(speed);
-    });
-  }
+  // Accordion handlers moved to later in setupControls to avoid duplication
 
   // Rotate Speed Slider
   const rotSpeedSlider = document.getElementById('rot-speed');
