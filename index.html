@@ -143,8 +143,8 @@
                 <div id="panel-a" class="details-content glass-panel">
                     <div class="detail-header">
                         <div>
-                            <div id="model-name-a" class="super-title"></div>
                             <h2 id="crystal-title-a">SELECT ARTIFACT</h2>
+                            <div id="model-name-a" class="info-model"></div>
                             <div id="model-year-a" class="info-year"></div>
                         </div>
                         <span id="crystal-type-a" class="type-badge">STANDBY</span>
@@ -171,8 +171,8 @@
                 <div id="panel-b" class="details-content glass-panel hidden">
                     <div class="detail-header">
                         <div>
-                            <div id="model-name-b" class="super-title"></div>
                             <h2 id="crystal-title-b">SELECT TARGET</h2>
+                            <div id="model-name-b" class="info-model"></div>
                             <div id="model-year-b" class="info-year"></div>
                         </div>
                         <span id="crystal-type-b" class="type-badge">STANDBY</span>
@@ -508,6 +508,15 @@
         </div>
     </div>
     </div>
+    <!-- Playback Pause Overlay -->
+    <div id="playback-pause-overlay" class="playback-overlay hidden">
+        <div class="overlay-content">
+            <span class="pulse-icon"></span>
+            <span class="overlay-text">PLAYBACK PAUSED</span>
+            <button id="btn-resume-playback" class="resume-btn">RESUME</button>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script type="module" src="./src/main.js"></script>
     <script type="module" src="./src/ui.js"></script>

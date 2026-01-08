@@ -47,6 +47,9 @@ let isInverted = true;
 // Recording State
 let isRecording = false;
 let isPlaying = false;
+let isPlaybackPaused = false;
+let playbackIndex = 0;
+let lastModelUrl = null;
 let recordingBuffer = [];
 let recordingInterval = null;
 let recordingStartTime = 0;
@@ -113,13 +116,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await attractRes.json();
       if (Array.isArray(data) && data.length > 0) {
         recordingBuffer = data;
-        btnPlay.classList.remove('hidden');
-        btnSave.classList.remove('hidden');
+        if (btnPlay) btnPlay.classList.remove('hidden');
+        if (btnSave) btnSave.classList.remove('hidden');
         console.log("Default attract mode loaded.");
       }
     }
   } catch (e) {
     // Ignore if not found
+  }
+
+  // Playback Pause UI
+  const pauseOverlay = document.getElementById('playback-pause-overlay');
+  const btnResume = document.getElementById('btn-resume-playback');
+
+  if (btnResume) {
+    btnResume.addEventListener('click', () => {
+      resumePlayback();
+    });
+  }
+
+  // Interruption Detection
+  if (viewerContainer) {
+    const handleInteraction = () => {
+      if (isPlaying && !isPlaybackPaused) {
+        pausePlayback();
+      }
+    };
+    viewerContainer.addEventListener('mousedown', handleInteraction);
+    viewerContainer.addEventListener('wheel', handleInteraction);
+    viewerContainer.addEventListener('touchstart', handleInteraction);
   }
 
   // 3. Setup Search & Filters
@@ -330,6 +355,9 @@ async function handleLoadCrystal(data, slot) {
   if (ui.superTitle) ui.superTitle.textContent = data.modelName || 'UNKNOWN';
   if (ui.year) ui.year.textContent = data.year || '----';
   ui.title.textContent = data.name;
+
+  // Track last model for resume
+  if (slot === 'main') lastModelUrl = data.url;
   ui.type.textContent = data.type;
 
   try {
@@ -781,11 +809,11 @@ if (btnLoad) {
 if (btnPlay) {
   btnPlay.addEventListener('click', () => {
     if (isPlaying) {
-      isPlaying = false;
-      if (playbackTimeout) clearTimeout(playbackTimeout);
-      btnPlay.textContent = "PLAY ATTRACT";
-      btnPlay.classList.remove('active');
-      showToast("Playback stopped.");
+      if (isPlaybackPaused) {
+        resumePlayback();
+      } else {
+        stopPlayback();
+      }
       return;
     }
 
@@ -794,23 +822,71 @@ if (btnPlay) {
       return;
     }
 
-    isPlaying = true;
-    btnPlay.textContent = "STOP PLAYBACK";
-    btnPlay.classList.add('active');
-    showToast("Starting playback...");
-
-    startPlayback(0);
+    startPlaybackSession();
   });
 }
 
+function startPlaybackSession() {
+  isPlaying = true;
+  isPlaybackPaused = false;
+  playbackIndex = 0;
+  btnPlay.textContent = "STOP ATTRACT";
+  btnPlay.classList.add('active');
+  document.getElementById('playback-pause-overlay').classList.add('hidden');
+  showToast("Starting playback...");
+
+  startPlayback(0);
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  isPlaybackPaused = false;
+  if (playbackTimeout) clearTimeout(playbackTimeout);
+  btnPlay.textContent = "PLAY ATTRACT";
+  btnPlay.classList.remove('active');
+  document.getElementById('playback-pause-overlay').classList.add('hidden');
+  showToast("Playback stopped.");
+}
+
+function pausePlayback() {
+  if (!isPlaying) return;
+  isPlaybackPaused = true;
+  if (playbackTimeout) clearTimeout(playbackTimeout);
+  document.getElementById('playback-pause-overlay').classList.remove('hidden');
+  if (btnPlay) btnPlay.textContent = "RESUME ATTRACT";
+}
+
+function resumePlayback() {
+  if (!isPlaying) return;
+  isPlaybackPaused = false;
+  document.getElementById('playback-pause-overlay').classList.add('hidden');
+  if (btnPlay) btnPlay.textContent = "STOP ATTRACT";
+  showToast("Resuming playback...");
+
+  // Resume from the model we were on
+  if (lastModelUrl) {
+    const item = Array.from(document.querySelectorAll('.crystal-item')).find(el => el.dataset.url === lastModelUrl);
+    if (item) item.click();
+  }
+
+  startPlayback(playbackIndex);
+}
+
 function startPlayback(index) {
-  if (!isPlaying || index >= recordingBuffer.length) {
-    if (index >= recordingBuffer.length) {
-      showToast("Playback complete.");
-      isPlaying = false;
-      btnPlay.textContent = "PLAY ATTRACT";
-      btnPlay.classList.remove('active');
-    }
+  playbackIndex = index;
+  if (!isPlaying || isPlaybackPaused) return;
+
+  if (index >= recordingBuffer.length) {
+    // Loop: Restart with Twin Spires
+    showToast("Looping playback...");
+    const items = Array.from(navList.querySelectorAll('.crystal-item'));
+    const target = items.find(item =>
+      item.dataset.name.includes('The Twin Spires') ||
+      item.dataset.modelName.includes('CLIP')
+    );
+    if (target) target.click();
+
+    startPlayback(0);
     return;
   }
 
