@@ -37,9 +37,12 @@ jobs:
       - name: Build
         run: npm run build
         
+      - name: List build output
+        run: ls -la dist/ && find dist/ -name "manifest.json"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
+
       - name: Upload request artifact
         uses: actions/upload-pages-artifact@v3
         with:
