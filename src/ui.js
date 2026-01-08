@@ -888,7 +888,7 @@ function startPlaybackSession() {
   }
   const overlay = document.getElementById('playback-pause-overlay');
   if (overlay) overlay.classList.add('hidden');
-  showToast("Starting playback...");
+  showToast("Demo mode - interact to pause");
 
   startPlayback(0);
 }
