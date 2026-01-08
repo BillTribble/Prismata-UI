@@ -124,6 +124,7 @@ The script outputs a `.ply` file (Point Cloud) which you can view in Prismata.
 
 ## 📜 Changelog
 
+*   **v1.2.1**: Test deployment.
 *   **v1.2.0**: Added **Operation Firewall (Defense Mode)**.
 *   **v1.1.0**: Timeline Expansion (Gemini 3.0, DeepSeek-V3, Qwen 2.5, SmolLM, etc.).
 *   **v1.0.0**: Initial Release.
