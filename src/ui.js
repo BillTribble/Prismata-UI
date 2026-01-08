@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load default attract mode
   try {
-    const attractRes = await fetch('./src/prismata_attract_1767869020832.json');
+    const attractRes = await fetch('./prismata_attract_1767869020832.json');
 
     if (attractRes.ok) {
       const data = await attractRes.json();
