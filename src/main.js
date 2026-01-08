@@ -8,7 +8,9 @@ console.log('Deployed commit: 6f3d3acb39380f479d2f8a89efd1c25792acc53c');
  * Helper to fetch assets with a fallback for unbuilt GitHub Pages deployments
  */
 export async function smartFetch(url) {
+  console.log(`SmartFetch: Attempting ${url}`);
   let res = await fetch(url);
+  console.log(`SmartFetch: ${url} status: ${res.status}`);
   if (res.ok) return res;
 
   if (!url.includes('public/')) {
@@ -18,6 +20,7 @@ export async function smartFetch(url) {
 
     console.log(`SmartFetch: Falling back from ${url} to ${fallbackUrl}`);
     const fallbackRes = await fetch(fallbackUrl);
+    console.log(`SmartFetch: ${fallbackUrl} status: ${fallbackRes.status}`);
     if (fallbackRes.ok) return fallbackRes;
   }
   return res;

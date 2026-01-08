@@ -2,7 +2,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './', // Use relative paths for assets (works on GitHub Pages /repo/ or root)
+  base: '/Prismata-UI/', // Set base for GitHub Pages subfolder
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

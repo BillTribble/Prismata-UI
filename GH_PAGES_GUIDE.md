@@ -11,7 +11,7 @@ Your repository is now configured for **Automatic Deployment**.
     git add .
     git commit -m "Initial commit of Prismata"
     git branch -M main
-    git remote add origin https://github.com/FreddyAyala/Prismata.git
+    git remote add origin https://github.com/billtribble/Prismata-UI.git
     git push -u origin main
     ```
 
@@ -23,7 +23,7 @@ Your repository is now configured for **Automatic Deployment**.
 
 3.  **Wait**:
     *   Click the "Actions" tab to see the build running.
-    *   Once green, your site will be live at: `https://YOUR_USERNAME.github.io/Prismata/`.
+    *   Once green, your site will be live at: `https://YOUR_USERNAME.github.io/Prismata-UI/`.
 
 ## Manual Method (Alternative)
 If you prefer not to use Actions, you can run:
