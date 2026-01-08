@@ -15,7 +15,7 @@ export async function smartFetch(url) {
 
   if (!url.includes('public/')) {
     const fallbackUrl = url.startsWith('./')
-      ? url.replace('./', '/')
+      ? '/Prismata-UI' + url.replace('./', '/')
       : `public/${url}`;
 
     console.log(`SmartFetch: Falling back from ${url} to ${fallbackUrl}`);

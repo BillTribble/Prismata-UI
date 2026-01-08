@@ -1,8 +1,7 @@
-
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/Prismata-UI/', // Set base for GitHub Pages subfolder
+  base: process.env.NODE_ENV === 'production' ? '/Prismata-UI/' : './', // Use relative paths for local, absolute for GitHub Pages
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
