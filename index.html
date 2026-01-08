@@ -60,6 +60,7 @@
                         </svg>
                     </button>
                     <button id="btn-play-attract" class="minimal-btn hidden">PLAY ATTRACT</button>
+                    <button id="btn-resume-playback" class="minimal-btn hidden">RESUME</button>
                     <button id="btn-timeline" class="minimal-btn">TIMELINE</button>
                     <button id="btn-about" class="minimal-btn">ABOUT</button>
                     <button id="btn-toggle-info" class="minimal-btn">HIDE INFO</button>
@@ -406,13 +407,7 @@
                 </div>
             </footer>
 
-            <!-- DataVis Overlay (Top-Left of Graph Area) -->
-            <div id="datavis-overlay"
-                style="grid-area: content; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;">
-                <div id="playback-pause-overlay" class="playback-overlay hidden" style="pointer-events: auto;">
-                    <button id="btn-resume-playback" class="resume-btn">RESUME</button>
-                </div>
-            </div>
+            <!-- DataVis Overlay removed - resume button moved to header -->
         </div>
     </div>
 

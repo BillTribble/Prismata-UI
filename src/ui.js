@@ -886,8 +886,8 @@ function startPlaybackSession() {
     btnPlay.textContent = "STOP ATTRACT";
     btnPlay.classList.add('active');
   }
-  const overlay = document.getElementById('playback-pause-overlay');
-  if (overlay) overlay.classList.add('hidden');
+  const btnResume = document.getElementById('btn-resume-playback');
+  if (btnResume) btnResume.classList.add('hidden');
   showToast("Demo mode - interact to pause");
 
   startPlayback(0);
@@ -897,9 +897,12 @@ function stopPlayback() {
   isPlaying = false;
   isPlaybackPaused = false;
   if (playbackTimeout) clearTimeout(playbackTimeout);
-  btnPlay.textContent = "PLAY ATTRACT";
-  btnPlay.classList.remove('active');
-  document.getElementById('playback-pause-overlay').classList.add('hidden');
+  if (btnPlay) {
+    btnPlay.textContent = "PLAY ATTRACT";
+    btnPlay.classList.remove('active');
+  }
+  const btnResume = document.getElementById('btn-resume-playback');
+  if (btnResume) btnResume.classList.add('hidden');
   showToast("Playback stopped.");
 }
 
@@ -907,14 +910,16 @@ function pausePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = true;
   if (playbackTimeout) clearTimeout(playbackTimeout);
-  document.getElementById('playback-pause-overlay').classList.remove('hidden');
+  const btnResume = document.getElementById('btn-resume-playback');
+  if (btnResume) btnResume.classList.remove('hidden');
   if (btnPlay) btnPlay.textContent = "RESUME ATTRACT";
 }
 
 function resumePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = false;
-  document.getElementById('playback-pause-overlay').classList.add('hidden');
+  const btnResume = document.getElementById('btn-resume-playback');
+  if (btnResume) btnResume.classList.add('hidden');
   if (btnPlay) btnPlay.textContent = "STOP ATTRACT";
   showToast("Resuming playback...");
 
