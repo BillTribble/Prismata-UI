@@ -52,7 +52,7 @@
                     <span class="subtitle">NEURAL ARCHITECTURE GALLERY</span>
                 </div>
                 <div class="status-indicator">
-                    <button id="btn-easter-egg" class="icon-btn" title="Toggle Simulation">
+                    <button id="btn-easter-egg" class="icon-btn" title="Toggle Simulation" style="display: none;">
                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                             <!-- Tron Identity Disc Icon -->
                             <path
@@ -397,126 +397,67 @@
                     LEFT CLICK: ROTATE // RIGHT CLICK: PAN // SCROLL: ZOOM
                 </div>
             </footer>
-            <!-- About Modal -->
-            <div id="about-modal" class="modal-overlay hidden">
-                <div class="modal-content glass-panel"
-                    style="background: rgba(10, 20, 30, 0.95); max-width: 600px; padding: 30px;">
-                    <button id="btn-close-modal" class="close-btn"
-                        style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--color-primary); font-size:1.5rem; cursor:pointer;">&times;</button>
-                    <h2 style="color:var(--color-primary); margin-top:0;">THE PRISMATA PROJECT</h2>
-                    <div class="modal-body">
-                        <p class="highlight" style="font-size:1.1rem; color:#fff; margin-bottom:20px;">Visualizing the
-                            invisible
-                            geometry of intelligence.</p>
-                        <p style="margin-bottom:20px; color:#ccc;">Prismata transforms the raw mathematical weights of
-                            Neural
-                            Networks into 3D crystalline structures. By applying PCA (Principal Component Analysis) to
-                            layer
-                            weights, we reveal the unique "fingerprint" of each architecture.</p>
+        </div>
+    </div>
 
-                        <div
-                            style="margin: 20px 0; padding: 15px; background: rgba(0,243,255,0.05); border-left: 2px solid var(--color-primary);">
-                            <h3 style="font-size:0.8rem; color:var(--color-secondary); letter-spacing:1px;">AUTHORS</h3>
-                            <p style="margin-bottom:10px;">Created by <a href="https://www.linkedin.com/in/freddyayala/"
-                                    target="_blank" style="color:#fff; text-decoration:underline;">Frederic Ayala</a>
-                            </p>
+    <!-- Playback Pause Overlay -->
+    <div id="playback-pause-overlay" class="playback-overlay hidden">
+        <div class="overlay-content">
+            <span class="pulse-icon"></span>
+            <span class="overlay-text">PLAYBACK PAUSED</span>
+            <button id="btn-resume-playback" class="resume-btn">RESUME</button>
+        </div>
+    </div>
 
-                            <h3
-                                style="font-size:0.8rem; color:var(--color-secondary); letter-spacing:1px; margin-top:10px;">
-                                CONTRIBUTE</h3>
-                            <p>Follow the <a href="https://github.com/FreddyAyala/Prismata/blob/main/CONTRIBUTING.md"
-                                    target="_blank" style="color:#fff; text-decoration:underline;">Contribution
-                                    Guide</a> on GitHub.
-                            </p>
-                        </div>
+    <!-- About Modal -->
+    <div id="about-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="max-width: 600px; padding: 30px;">
+            <button id="btn-close-about" class="modal-close-btn" style="font-size: 1.5rem;">&times;</button>
+            <h2 style="color:var(--color-primary); margin-top:0;">THE PRISMATA PROJECT</h2>
+            <div class="modal-body">
+                <p class="highlight" style="font-size:1.1rem; color:#fff; margin-bottom:20px;">Visualizing the invisible
+                    geometry of intelligence.</p>
+                <p style="margin-bottom:20px; color:#ccc;">Prismata transforms the raw mathematical weights of Neural
+                    Networks into 3D crystalline structures. By applying PCA (Principal Component Analysis) to layer
+                    weights, we reveal the unique "fingerprint" of each architecture.</p>
 
-                        <div class="upload-section"
-                            style="border-top:1px solid rgba(255,255,255,0.1); padding-top:20px; margin-top:20px;">
-                            <h3 style="color:var(--color-secondary); font-size:0.9rem;">PREVISUALIZE CUSTOM CRYSTAL</h3>
-                            <p style="font-size:0.8rem; margin-bottom:10px; color:#ccc;">Upload a generated
-                                <code>.ply</code> file
-                                to view it instantly.
-                            </p>
-                            <label class="minimal-btn" style="display:inline-block; cursor:pointer; padding: 8px 16px;">
-                                UPLOAD .PLY
-                                <input type="file" id="file-upload" accept=".ply" style="display:none;">
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                <!-- Playback Pause Overlay -->
-                <div id="playback-pause-overlay" class="playback-overlay hidden">
-                    <div class="overlay-content">
-                        <span class="pulse-icon"></span>
-                        <span class="overlay-text">PLAYBACK PAUSED</span>
-                        <button id="btn-resume-playback" class="resume-btn">RESUME</button>
-                    </div>
-                </div>
-            </div>
+                <div
+                    style="margin: 20px 0; padding: 15px; background: rgba(0,243,255,0.05); border-left: 2px solid var(--color-primary);">
+                    <h3 style="font-size:0.8rem; color:var(--color-secondary); letter-spacing:1px;">AUTHORS</h3>
+                    <p style="margin-bottom:10px;">Created by <a href="https://www.linkedin.com/in/freddyayala/"
+                            target="_blank" style="color:#fff; text-decoration:underline;">Frederic Ayala</a></p>
 
-            <!-- ABOUT MODAL -->
-            <div id="about-modal" class="modal-backdrop hidden">
-                <div class="modal-content">
-                    <button id="btn-close-about" class="modal-close-btn">&times;</button>
-                    <h2>VISUALIZING INTELLIGENCE</h2>
-                    <div class="modal-body">
-                        <p><strong>Prismata</strong> visualizes the hidden topology of Neural Networks using <span
-                                style="color:var(--color-primary)">Principal Component Analysis (PCA)</span>.</p>
-
-                        <div class="legend-grid">
-                            <div class="legend-item">
-                                <span class="legend-icon" style="background:var(--color-primary)"></span>
-                                <div>
-                                    <strong>POINTS</strong>
-                                    <p>Neurons/Cortex processing features. (Cyan = Processing)</p>
-                                </div>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-icon gradient-vertical"></span>
-                                <div>
-                                    <strong>VERTICAL AXIS</strong>
-                                    <p>Network Depth. Input (Bottom/Orange) &rarr; Output (Top/Red).</p>
-                                </div>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-icon" style="background:#ff0055"></span>
-                                <div>
-                                    <strong>STRUCTURE</strong>
-                                    <p>Helices (LLMs) or Pyramids (CNNs) represent the Autonomy Flow.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <small style="opacity:0.6; display:block; margin-top:20px;">
-                            * "Mock" weights used for theoretical architecture visualization of restricted models (e.g.
-                            DeepSeek).
-                        </small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Timeline Overlay (Hidden by Default) -->
-            <div id="timeline-overlay" class="timeline-overlay hidden">
-                <button id="btn-close-timeline" class="close-timeline-btn">EXIT TIMELINE</button>
-
-                <div class="timeline-active-info">
-                    <h2 id="timeline-year">2024</h2>
-                    <h1 id="timeline-title">GEMMA 2</h1>
-                    <p id="timeline-desc">Google's open model. Highly efficient knowledge compression.</p>
-                </div>
-
-                <div class="timeline-track-container">
-                    <button id="btn-prev-model" class="nav-arrow left">&lt;</button>
-                    <div id="timeline-track" class="timeline-track">
-                        <!-- Populated JS: Nodes go here -->
-                    </div>
-                    <button id="btn-next-model" class="nav-arrow right">&gt;</button>
+                    <h3 style="font-size:0.8rem; color:var(--color-secondary); letter-spacing:1px; margin-top:10px;">
+                        CONTRIBUTE</h3>
+                    <p>Follow the <a href="https://github.com/FreddyAyala/Prismata/blob/main/CONTRIBUTING.md"
+                            target="_blank" style="color:#fff; text-decoration:underline;">Contribution Guide</a> on
+                        GitHub.</p>
                 </div>
             </div>
         </div>
-        <!-- Scripts -->
-        <script type="module" src="./src/main.js"></script>
-        <script type="module" src="./src/ui.js"></script>
+    </div>
+
+    <!-- Timeline Overlay (Hidden by Default) -->
+    <div id="timeline-overlay" class="timeline-overlay hidden">
+        <button id="btn-close-timeline" class="close-timeline-btn">EXIT TIMELINE</button>
+
+        <div class="timeline-active-info">
+            <h2 id="timeline-year">2024</h2>
+            <h1 id="timeline-title">GEMMA 2</h1>
+            <p id="timeline-desc">Google's open model. Highly efficient knowledge compression.</p>
+        </div>
+
+        <div class="timeline-track-container">
+            <button id="btn-prev-model" class="nav-arrow left">&lt;</button>
+            <div id="timeline-track" class="timeline-track">
+                <!-- Populated JS: Nodes go here -->
+            </div>
+            <button id="btn-next-model" class="nav-arrow right">&gt;</button>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script type="module" src="./src/main.js"></script>
+    <script type="module" src="./src/ui.js"></script>
 </body>
 
 </html>

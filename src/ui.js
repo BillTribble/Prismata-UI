@@ -135,6 +135,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Playback Pause UI
   const pauseOverlay = document.getElementById('playback-pause-overlay');
   const btnResume = document.getElementById('btn-resume-playback');
+  const btnAbout = document.getElementById('btn-about');
+  const aboutModal = document.getElementById('about-modal');
+  const btnCloseAbout = document.getElementById('btn-close-about');
+
+  if (btnAbout && aboutModal) {
+    btnAbout.addEventListener('click', () => {
+      aboutModal.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseAbout && aboutModal) {
+    btnCloseAbout.addEventListener('click', () => {
+      aboutModal.classList.add('hidden');
+    });
+  }
 
   if (btnResume) {
     btnResume.addEventListener('click', () => {
@@ -143,16 +158,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // Interruption Detection
-  if (viewerContainer) {
-    const handleInteraction = () => {
-      if (isPlaying && !isPlaybackPaused) {
-        pausePlayback();
-      }
-    };
-    viewerContainer.addEventListener('mousedown', handleInteraction);
-    viewerContainer.addEventListener('wheel', handleInteraction);
-    viewerContainer.addEventListener('touchstart', handleInteraction);
-  }
+  const handleInteraction = (e) => {
+    // Ignore if it's the resume button itself
+    if (e.target.closest('#btn-resume-playback')) return;
+
+    if (isPlaying && !isPlaybackPaused) {
+      pausePlayback();
+    }
+  };
+  window.addEventListener('mousedown', handleInteraction, true);
+  window.addEventListener('wheel', handleInteraction, true);
+  window.addEventListener('touchstart', handleInteraction, true);
 
   // 3. Setup Search & Filters
   setupSearch();
