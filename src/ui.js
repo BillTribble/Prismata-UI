@@ -113,7 +113,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const attractRes = await fetch('./public/attract_mode.json');
 
-
     if (attractRes.ok) {
       const data = await attractRes.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -127,10 +126,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           console.log("→ Auto-starting playback");
           startPlaybackSession();
         }, 1200);
+      } else {
+        console.warn("⚠ Attract mode file loaded but data is invalid");
       }
+    } else {
+      console.error("✗ Attract mode file not found (HTTP", attractRes.status, ")");
     }
   } catch (e) {
-    // Ignore if not found
+    console.error("✗ Failed to load attract mode:", e);
   }
 
   // Removed previous auto-start block
