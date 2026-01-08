@@ -112,8 +112,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Try to load default attract mode
   try {
     const attractRes = await smartFetch('./attract_mode.json');
-    if (attractRes.ok) {
-      const data = await attractRes.json();
+    // Fallback if ./ fails
+    if (!attractRes.ok) {
+      console.warn("Attract mode ./attract_mode.json failed, trying /attract_mode.json");
+    }
+    const finalRes = attractRes.ok ? attractRes : await fetch('/attract_mode.json');
+
+    if (finalRes.ok) {
+      const data = await finalRes.json();
       if (Array.isArray(data) && data.length > 0) {
         recordingBuffer = data;
         if (btnPlay) btnPlay.classList.remove('hidden');
@@ -866,12 +872,16 @@ if (btnPlay) {
 }
 
 function startPlaybackSession() {
+  console.log("Starting attract playback session...");
   isPlaying = true;
   isPlaybackPaused = false;
   playbackIndex = 0;
-  btnPlay.textContent = "STOP ATTRACT";
-  btnPlay.classList.add('active');
-  document.getElementById('playback-pause-overlay').classList.add('hidden');
+  if (btnPlay) {
+    btnPlay.textContent = "STOP ATTRACT";
+    btnPlay.classList.add('active');
+  }
+  const overlay = document.getElementById('playback-pause-overlay');
+  if (overlay) overlay.classList.add('hidden');
   showToast("Starting playback...");
 
   startPlayback(0);

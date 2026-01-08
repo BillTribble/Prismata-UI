@@ -1745,6 +1745,10 @@ input[type=range]::-moz-range-thumb {
 
 .filter-accordion .accordion-content {
     background: rgba(0, 0, 0, 0.3);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: all 0.3s ease;
 }
 
 .filter-accordion .accordion-content.open {
