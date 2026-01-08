@@ -1488,6 +1488,8 @@ setTimeout(() => {
 
     console.log('Timeline View button created with cyan color');
 
+    btnTimeline.style.display = 'none'; // Hide for now
+
     headerStatus.insertBefore(btnTimeline, btnResume.nextSibling);
   }
 }, 1000); // Wait for DOM
