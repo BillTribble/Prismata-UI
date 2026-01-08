@@ -2,13 +2,13 @@ import { LightCycleArena } from './easterEgg.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-console.log('Deployed commit: 5fdb35161bada7709a622868f8768ff381a20f12');
+console.log('Deployed commit: 6eb5ecedeaaf471b09c57f0ebef9b104d632bf08');
 
 /**
  * Helper to fetch assets with a fallback for unbuilt GitHub Pages deployments
  */
 export async function smartFetch(url) {
-  console.log(`SmartFetch: Attempting ${url}`);
+  console.log(`SmartFetch: Attempting ${url} from ${window.location.href}`);
   let res = await fetch(url);
   console.log(`SmartFetch: ${url} status: ${res.status}`);
   if (res.ok) return res;
@@ -227,6 +227,7 @@ export class CrystalViewer {
   }
 
   async loadCrystal(url) {
+    console.log(`Loading crystal: ${url}`);
     if (this.crystalGroup) {
       this.scene.remove(this.crystalGroup);
       this.crystalGroup.children.forEach(child => {

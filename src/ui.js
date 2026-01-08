@@ -347,6 +347,7 @@ function setActiveSlot(slot) {
 async function loadGallery() {
   try {
     // Load Manifest
+    console.log('Loading manifest...');
     const res = await smartFetch('./crystals/manifest.json');
     if (!res.ok) throw new Error(`Failed to load manifest: ${res.status} ${res.statusText}`);
     let models = await res.json();
