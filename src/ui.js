@@ -217,11 +217,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Interruption Detection
   const handleInteraction = (e) => {
-    // Ignore if it's the resume button OR the play button OR accordion controls
+    // Ignore if it's the resume button OR the play button OR accordion controls OR info panel
     if (e.target.closest('#btn-resume-playback') ||
       e.target.closest('#btn-play-attract') ||
       e.target.closest('.accordion-toggle') ||
-      e.target.closest('.accordion-content')) return;
+      e.target.closest('.accordion-content') ||
+      e.target.closest('.artifact-details')) return;
 
     if (isPlaying && !isPlaybackPaused) {
       pausePlayback();
