@@ -45,6 +45,29 @@ window.targetFPS = 24;
 let currentPalette = 'classic';
 let isInverted = true;
 
+const autonomyColors = {
+  normal: {
+    output: '#ff00ff',
+    processing: '#00ff00',
+    input: '#ff0000'
+  },
+  inverted: {
+    output: '#90ee90',
+    processing: '#ff00ff',
+    input: '#00ffff'
+  }
+};
+
+function updateAutonomyColors() {
+  const colors = isInverted ? autonomyColors.inverted : autonomyColors.normal;
+  const outputEl = document.querySelector('.autonomy-text.output-text');
+  const processingEl = document.querySelector('.autonomy-text.processing-text');
+  const inputEl = document.querySelector('.autonomy-text.input-text');
+  if (outputEl) outputEl.style.color = colors.output;
+  if (processingEl) processingEl.style.color = colors.processing;
+  if (inputEl) inputEl.style.color = colors.input;
+}
+
 // Recording State
 let isRecording = false;
 let isPlaying = false;
@@ -109,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. Load Gallery
   await loadGallery();
   setupControls();
+  updateAutonomyColors();
 
   // Try to load default attract mode
   try {
@@ -1228,6 +1252,7 @@ if (btnInvertInfluence) {
     btnInvertInfluence.textContent = isInverted ? 'INVERTED (COMPLEMENTARY)' : 'DIRECT INFLUENCE';
     if (mainViewer) mainViewer.setInvertInfluence(isInverted);
     if (compareViewer) compareViewer.setInvertInfluence(isInverted);
+    updateAutonomyColors();
   });
 }
 
