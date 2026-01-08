@@ -348,6 +348,7 @@ async function loadGallery() {
   try {
     // Load Manifest
     const res = await smartFetch('./crystals/manifest.json');
+    if (!res.ok) throw new Error(`Failed to load manifest: ${res.status} ${res.statusText}`);
     let models = await res.json();
 
     // Sort by Year (Descending: Recent -> Oldest)
@@ -1520,8 +1521,13 @@ setTimeout(() => {
 }, 1000); // Wait for DOM
 
 // Self-init timeline data independently to avoid scope issues
-fetch('./crystals/manifest.json').then(r => r.json()).then(models => {
+smartFetch('./crystals/manifest.json').then(r => {
+  if (!r.ok) throw new Error(`Failed to load timeline manifest: ${r.status} ${r.statusText}`);
+  return r.json();
+}).then(models => {
   setupTimelineMode(models);
+}).catch(err => {
+  console.error("Failed to setup timeline:", err);
 });
 
 // --- DYNAMIC PERFORMANCE GOVERNOR ---

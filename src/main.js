@@ -13,7 +13,7 @@ export async function smartFetch(url) {
 
   if (!url.includes('public/')) {
     const fallbackUrl = url.startsWith('./')
-      ? url.replace('./', './public/')
+      ? url.replace('./', '/')
       : `public/${url}`;
 
     console.log(`SmartFetch: Falling back from ${url} to ${fallbackUrl}`);
@@ -240,6 +240,7 @@ export class CrystalViewer {
 
     try {
       const response = await smartFetch(url);
+      if (!response.ok) throw new Error(`Failed to load crystal: ${response.status} ${response.statusText}`);
       const buffer = await response.arrayBuffer();
       const { meshResult, stats } = this.parsePLY(buffer);
 
