@@ -809,8 +809,8 @@ if (btnRecord) {
       btnRecord.classList.remove('active');
 
       if (recordingBuffer.length > 0) {
-        btnPlay.classList.remove('hidden');
-        btnSave.classList.remove('hidden');
+        if (btnPlay) btnPlay.classList.remove('hidden');
+        if (btnSave) btnSave.classList.remove('hidden');
         const data = JSON.stringify(recordingBuffer);
         navigator.clipboard.writeText(data).then(() => {
           showToast("Session data copied to clipboard!");
@@ -845,8 +845,8 @@ if (btnLoad) {
       const data = JSON.parse(input);
       if (Array.isArray(data)) {
         recordingBuffer = data;
-        btnPlay.classList.remove('hidden');
-        btnSave.classList.remove('hidden');
+        if (btnPlay) btnPlay.classList.remove('hidden');
+        if (btnSave) btnSave.classList.remove('hidden');
         showToast("Attract sequence loaded!");
       } else {
         showToast("Invalid data format.", true);
@@ -887,7 +887,7 @@ function startPlaybackSession() {
     btnPlay.classList.add('active');
   }
   const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.classList.add('hidden');
+  if (btnResume) btnResume.style.display = 'none';
   showToast("Demo mode - interact to pause");
 
   startPlayback(0);
@@ -902,7 +902,7 @@ function stopPlayback() {
     btnPlay.classList.remove('active');
   }
   const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.classList.add('hidden');
+  if (btnResume) btnResume.style.display = 'none';
   showToast("Playback stopped.");
 }
 
@@ -910,16 +910,14 @@ function pausePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = true;
   if (playbackTimeout) clearTimeout(playbackTimeout);
-  const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.classList.remove('hidden');
-  if (btnPlay) btnPlay.textContent = "RESUME ATTRACT";
+  if (btnResume) btnResume.style.display = 'inline-block';
 }
 
 function resumePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = false;
   const btnResume = document.getElementById('btn-resume-playback');
-  if (btnResume) btnResume.classList.add('hidden');
+  if (btnResume) btnResume.style.display = 'none';
   if (btnPlay) btnPlay.textContent = "STOP ATTRACT";
   showToast("Resuming playback...");
 
