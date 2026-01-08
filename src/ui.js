@@ -461,6 +461,9 @@ async function handleLoadCrystal(data, slot) {
 
 function parseMarkdown(text) {
   if (!text) return '';
+  // Remove redundant metadata
+  text = text.replace(/^(\*\*Architecture:\*\*.*\n?)/gm, '');
+  text = text.replace(/^(\*\*Shape:\*\*.*\n?)/gm, '');
   let html = text;
 
   // Normalize newlines
@@ -481,6 +484,8 @@ function parseMarkdown(text) {
   // 4. Cleanup
   html = html.replace(/<\/h4><br>/g, '</h4>');
   html = html.replace(/<\/h5><br>/g, '</h5>');
+  html = html.replace(/^(<br>)*/, '');
+  html = html.replace(/(<br>)*$/, '');
 
   return html;
 }
@@ -920,6 +925,9 @@ function pausePlayback() {
     btnResume.classList.remove('hidden');
     btnResume.style.fontWeight = 'bold';
     btnResume.classList.add('pulse-appear');
+    btnResume.addEventListener('animationend', () => {
+      btnResume.classList.remove('pulse-appear');
+    }, { once: true });
   } else {
     console.log('btnResume is null');
   }

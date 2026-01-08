@@ -771,20 +771,23 @@ input[type=range]::-moz-range-thumb {
 
 @keyframes pulse-appear {
     0% {
-        box-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 5px rgba(0, 243, 255, 0.8);
     }
 
     50% {
-        box-shadow: 0 0 20px rgba(0, 243, 255, 0.8);
+        box-shadow: 0 0 30px rgba(0, 243, 255, 1);
     }
 
     100% {
-        box-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+        box-shadow: 0 0 5px rgba(0, 243, 255, 0.8);
     }
 }
 
 .pulse-appear {
-    animation: pulse-appear 0.5s ease-in-out 3;
+    animation: pulse-appear 1.5s ease-in-out 3;
+    background: var(--color-primary) !important;
+    color: #000 !important;
+    border: none !important;
 }
 
 /* Scrollbar */
@@ -827,7 +830,7 @@ input[type=range]::-moz-range-thumb {
     opacity: 0.85;
     letter-spacing: 1px;
     margin-top: 2px;
-    margin-bottom: 16px;
+    margin-bottom: 4px;
 }
 
 /* Playback Overlay */
