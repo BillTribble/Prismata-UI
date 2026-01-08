@@ -1,5 +1,5 @@
 
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages 2
 
 on:
   push:
@@ -30,6 +30,11 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+          
+      - name: Clean Install Setup
+        run: |
+          if [ -f package-lock.json ]; then rm package-lock.json; fi
+          npm config set registry https://registry.npmjs.org/
 
       - name: Install Dependencies
         run: npm install
@@ -37,12 +42,9 @@ jobs:
       - name: Build
         run: npm run build
         
-      - name: List build output
-        run: ls -la dist/ && find dist/ -name "manifest.json"
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
-
+        
       - name: Upload request artifact
         uses: actions/upload-pages-artifact@v3
         with:
