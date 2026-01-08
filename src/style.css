@@ -788,51 +788,43 @@ input[type=range]::-moz-range-thumb {
 }
 
 .info-model {
-    font-size: 0.9rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    color: var(--color-secondary);
+    color: var(--color-primary);
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 4px;
+    letter-spacing: 2px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    text-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
 }
 
 .info-year {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-family: var(--font-header);
     color: var(--color-primary);
-    opacity: 0.9;
-    letter-spacing: 2px;
+    opacity: 0.85;
+    letter-spacing: 1px;
     margin-top: 2px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 /* Playback Overlay */
 .playback-overlay {
     position: absolute;
-    top: 20px;
-    left: 20px;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 10000;
-    /* Ensure it's above everything */
     pointer-events: auto;
-    background: rgba(0, 10, 20, 0.8);
+    background: rgba(0, 10, 20, 0.9);
     backdrop-filter: blur(8px);
     border: 1px solid var(--color-primary);
     border-radius: 4px;
-    padding: 10px 15px;
-    box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
-    display: flex;
-    align-items: center;
+    padding: 0;
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
 }
 
-.playback-overlay.hidden {
-    display: none;
-}
 
-.overlay-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
 
 .pulse-icon {
     width: 10px;
@@ -873,11 +865,12 @@ input[type=range]::-moz-range-thumb {
     color: #000;
     font-family: var(--font-header);
     font-weight: bold;
-    font-size: 0.7rem;
-    padding: 5px 12px;
+    font-size: 0.75rem;
+    padding: 8px 16px;
     cursor: pointer;
     transition: all 0.2s;
     letter-spacing: 1px;
+    border-radius: 2px;
 }
 
 .resume-btn:hover {
