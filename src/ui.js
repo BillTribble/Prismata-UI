@@ -217,12 +217,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Interruption Detection
   const handleInteraction = (e) => {
-    // Ignore if it's the resume button OR the play button OR accordion controls OR info panel
+    // Ignore if it's the resume button OR the play button OR accordion controls OR info panel OR scrolling in models list
     if (e.target.closest('#btn-resume-playback') ||
       e.target.closest('#btn-play-attract') ||
       e.target.closest('.accordion-toggle') ||
       e.target.closest('.accordion-content') ||
-      e.target.closest('.artifact-details')) return;
+      e.target.closest('.artifact-details') ||
+      (e.type === 'wheel' && e.target.closest('#model-list'))) return;
 
     if (isPlaying && !isPlaybackPaused) {
       pausePlayback();
@@ -422,8 +423,14 @@ async function loadGallery() {
         target.click();
         // Scroll to it?
         target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        // Pulse the model button on first load
+        target.classList.add('model-flash');
+        setTimeout(() => target.classList.remove('model-flash'), 6000);
       } else if (items.length > 0) {
         items[0].click();
+        // Pulse the model button on first load
+        items[0].classList.add('model-flash');
+        setTimeout(() => items[0].classList.remove('model-flash'), 6000);
       }
     }, 500);
 
@@ -1024,6 +1031,11 @@ function executePlaybackEvent(event) {
         document.querySelectorAll('.crystal-item').forEach(el => el.classList.remove('active'));
         item.classList.add('active');
         handleLoadCrystal(item.dataset, event.value.slot);
+        // Scroll to the model in the Models List panel
+        item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add bright neon flash to the button
+        item.classList.add('model-flash');
+        setTimeout(() => item.classList.remove('model-flash'), 6000);
       }
       break;
     case 'setting':

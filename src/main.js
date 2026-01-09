@@ -153,6 +153,25 @@ export class CrystalViewer {
 
     this.lastPanY = 0;
 
+    // Camera Transition State
+    this.cameraTransitionProgress = 1.0;
+    this.transitioningCamera = false;
+    this.cameraStartPosition = null;
+    this.cameraStartTarget = null;
+    this.cameraEndPosition = null;
+    this.cameraEndTarget = null;
+    this.cameraTransitionDuration = 4000; // 4 seconds
+
+    // Cross-fade State
+    this.enableCrossFade = true;
+    this.crossFadeProgress = 1.0;
+    this.oldCrystalGroup = null;
+    this.oldFadeStart = null;
+    this.oldFadeDuration = 900; // 0.9 seconds (3x longer)
+    this.newFadeStart = null;
+    this.newFadeDuration = 900; // 0.9 seconds (3x longer)
+    this.pendingCameraTransition = null;
+
     // Line indices for rebuilding
     this.allIndices = null;
     this.geometry = null;
@@ -227,8 +246,12 @@ export class CrystalViewer {
   }
 
   async loadCrystal(url) {
-    console.log(`Loading crystal: ${url}`);
-    if (this.crystalGroup) {
+
+    // Handle cross-fade: keep old group for fade out
+    if (this.enableCrossFade && this.crystalGroup) {
+      this.oldCrystalGroup = this.crystalGroup;
+      this.oldFadeStart = performance.now();
+    } else if (this.crystalGroup) {
       this.scene.remove(this.crystalGroup);
       this.crystalGroup.children.forEach(child => {
         if (child.geometry) child.geometry.dispose();
@@ -249,10 +272,17 @@ export class CrystalViewer {
       const { meshResult, stats } = this.parsePLY(buffer);
 
       this.crystalGroup = meshResult;
-      this.scene.add(this.crystalGroup);
+
+      // Add to scene immediately for initial load, defer for switches until old fade completes
+      if (!(this.enableCrossFade && this.oldCrystalGroup)) {
+        this.scene.add(this.crystalGroup);
+      }
 
       // Calibrated node size: Hourglass (3100) -> 0.028, Weaver (25k) -> 0.013
-      const nodeScaling = Math.max(0.005, Math.min(0.08, 0.005 + (1.3 / Math.sqrt(stats.nodes))));
+      let nodeScaling = Math.max(0.005, Math.min(0.32, 0.005 + (1.3 / Math.sqrt(stats.nodes))));
+      if (url.includes('crystals/gan/structure.ply')) {
+        nodeScaling = 0.32;
+      }
       this.setBaseSize(nodeScaling);
 
       // Sync the UI slider specifically to this new BASE size
@@ -260,7 +290,21 @@ export class CrystalViewer {
       // Ghost fader updates (vibrancy/oscillation)
       if (this.onUpdateUI) this.onUpdateUI(nodeScaling);
 
-      this.fitCameraToSelection();
+      // Start smooth camera transition for model switches after fades complete, immediate positioning for initial load
+      const targets = this.computeCameraTargets();
+      if (targets) {
+        if (this.oldCrystalGroup) { // switching models
+          this.pendingCameraTransition = targets;
+        } else {
+          // Initial load: position immediately
+          this.camera.position.copy(targets.position);
+          this.controls.target.copy(targets.target);
+          this.targetUniforms.uLineNear = targets.nearLimit;
+          this.targetUniforms.uLineFar = targets.farLimit;
+          this.targetUniforms.uNodeNear = targets.nearLimit;
+          this.targetUniforms.uNodeFar = targets.farLimit;
+        }
+      }
 
       return stats;
     } catch (err) {
@@ -319,13 +363,64 @@ export class CrystalViewer {
     this.panTime = 0;
   }
 
+  computeCameraTargets() {
+    if (!this.crystalGroup) return null;
+
+    const box = new THREE.Box3().setFromObject(this.crystalGroup);
+    if (box.isEmpty()) return null;
+
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+
+    const fovRad = this.camera.fov * (Math.PI / 180);
+    let cameraDist = (maxDim / 2) / Math.tan(fovRad / 2);
+    cameraDist *= 1.4;
+
+    const direction = new THREE.Vector3(1, 0.6, 1).normalize();
+    const pos = center.clone().add(direction.multiplyScalar(cameraDist));
+
+    const heightFactor = this.modelHeight / 15.0;
+    const mid = this.modelBottom + ((this.panMin + this.panMax) / 2) * heightFactor;
+
+    const deltaY = mid - center.y;
+    pos.y += deltaY;
+    const target = center.clone();
+    target.y += deltaY;
+
+    const nearLimit = cameraDist * 1.5;
+    const farLimit = cameraDist * 3.0;
+
+    return { position: pos, target, nearLimit, farLimit };
+  }
+
+  startCameraTransition(targetPosition, targetTarget, nearLimit, farLimit) {
+    this.cameraStartPosition = this.camera.position.clone();
+    this.cameraStartTarget = this.controls.target.clone();
+    this.cameraEndPosition = targetPosition.clone();
+    this.cameraEndTarget = targetTarget.clone();
+    this.cameraTransitionProgress = 0.0;
+    this.transitioningCamera = true;
+
+    // Update fog uniforms for new model
+    this.targetUniforms.uLineNear = nearLimit;
+    this.targetUniforms.uLineFar = farLimit;
+    this.targetUniforms.uNodeNear = nearLimit;
+    this.targetUniforms.uNodeFar = farLimit;
+  }
+
+
+
   setAutoRotate(enabled) {
     this.autoRotate = enabled;
     if (this.controls) this.controls.autoRotate = enabled;
   }
 
   resetView() {
-    this.fitCameraToSelection();
+    const targets = this.computeCameraTargets();
+    if (targets) {
+      this.startCameraTransition(targets.position, targets.target, targets.nearLimit, targets.farLimit);
+    }
   }
 
   setNodeBlending(mode) {
@@ -386,6 +481,75 @@ export class CrystalViewer {
 
   animate() {
     this.animationId = requestAnimationFrame(() => this.animate());
+
+    // Camera transition animation
+    if (this.transitioningCamera) {
+      const now = performance.now();
+      const deltaTime = now - (this.lastTransitionTime || now);
+      this.lastTransitionTime = now;
+      this.cameraTransitionProgress += deltaTime / this.cameraTransitionDuration;
+      const t = Math.min(this.cameraTransitionProgress, 1.0);
+      const easedT = 0.5 - 0.5 * Math.cos(t * Math.PI);
+
+      this.camera.position.lerpVectors(this.cameraStartPosition, this.cameraEndPosition, easedT);
+      this.controls.target.lerpVectors(this.cameraStartTarget, this.cameraEndTarget, easedT);
+      this.controls.update();
+
+      if (t >= 1) {
+        this.transitioningCamera = false;
+        this.lastTransitionTime = null; // Reset for next transition
+      }
+    }
+
+    // Sequential fade animation using global opacity uniforms
+    if (this.oldFadeStart) {
+      const elapsed = performance.now() - this.oldFadeStart;
+      const t = elapsed / this.oldFadeDuration;
+      if (t >= 1) {
+        this.scene.remove(this.oldCrystalGroup);
+        this.oldCrystalGroup.children.forEach(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) child.material.dispose();
+        });
+        this.oldCrystalGroup = null;
+        this.oldFadeStart = null;
+        // Add new model and start fade in
+        if (this.crystalGroup && this.enableCrossFade) {
+          this.scene.add(this.crystalGroup);
+          this.newFadeStart = performance.now();
+          this.customUniforms.uNodeOpacity.value = 0;
+          this.customUniforms.uLineOpacity.value = 0;
+        }
+      } else {
+        this.customUniforms.uNodeOpacity.value = 1 - t;
+        this.customUniforms.uLineOpacity.value = 1 - t;
+      }
+    } else if (this.newFadeStart) {
+      const elapsed = performance.now() - this.newFadeStart;
+      const t = elapsed / this.newFadeDuration;
+      if (t >= 1) {
+        this.newFadeStart = null;
+        this.customUniforms.uNodeOpacity.value = 1.0;
+        this.customUniforms.uLineOpacity.value = 1.0;
+      } else {
+        this.customUniforms.uNodeOpacity.value = t;
+        this.customUniforms.uLineOpacity.value = t;
+      }
+    } else {
+      this.customUniforms.uNodeOpacity.value = 1.0;
+      this.customUniforms.uLineOpacity.value = 1.0;
+    }
+
+    // Start camera transition after fades complete
+    if (this.pendingCameraTransition && !this.newFadeStart) {
+      this.startCameraTransition(
+        this.pendingCameraTransition.position,
+        this.pendingCameraTransition.target,
+        this.pendingCameraTransition.nearLimit,
+        this.pendingCameraTransition.farLimit
+      );
+      this.pendingCameraTransition = null;
+    }
 
     const lerp = (cur, tar, speed = 0.2) => cur + (tar - cur) * speed;
 
