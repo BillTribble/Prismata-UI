@@ -1,4 +1,4 @@
-import { CrystalViewer, smartFetch } from './main.js';
+import { CrystalViewer, smartFetch, THREE } from './main.js';
 
 // DOM Elements
 const navList = document.getElementById('model-list');
@@ -1046,20 +1046,45 @@ function startPlayback(index) {
   const delay = nextEvent ? (nextEvent.time - event.time) : 0;
 
   // Execute Event
-  executePlaybackEvent(event);
+  executePlaybackEvent(event, delay);
 
   playbackTimeout = setTimeout(() => {
     startPlayback(index + 1);
   }, delay);
 }
 
-function executePlaybackEvent(event) {
+function executePlaybackEvent(event, delay = 0) {
   switch (event.type) {
     case 'camera':
       if (mainViewer && mainViewer.camera && mainViewer.controls) {
-        mainViewer.camera.position.set(event.value.pos.x, event.value.pos.y, event.value.pos.z);
-        mainViewer.controls.target.set(event.value.target.x, event.value.target.y, event.value.target.z);
-        mainViewer.controls.update();
+        if (delay > 0) {
+          // Animate camera move over delay time
+          const startPos = mainViewer.camera.position.clone();
+          const startTarget = mainViewer.controls.target.clone();
+          const endPos = new THREE.Vector3(event.value.pos.x, event.value.pos.y, event.value.pos.z);
+          const endTarget = new THREE.Vector3(event.value.target.x, event.value.target.y, event.value.target.z);
+
+          const steps = Math.max(1, Math.floor(delay / 16)); // ~60fps
+          let step = 0;
+
+          function animate() {
+            step++;
+            const ratio = step / steps;
+            mainViewer.camera.position.lerpVectors(startPos, endPos, ratio);
+            mainViewer.controls.target.lerpVectors(startTarget, endTarget, ratio);
+            mainViewer.controls.update();
+
+            if (step < steps) {
+              setTimeout(animate, 16);
+            }
+          }
+          animate();
+        } else {
+          // Instant set for delay=0
+          mainViewer.camera.position.set(event.value.pos.x, event.value.pos.y, event.value.pos.z);
+          mainViewer.controls.target.set(event.value.target.x, event.value.target.y, event.value.target.z);
+          mainViewer.controls.update();
+        }
       }
       break;
     case 'model-load':

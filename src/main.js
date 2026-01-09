@@ -2,6 +2,9 @@ import { LightCycleArena } from './easterEgg.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
+// Export THREE for use in other modules
+export { THREE };
+
 console.log('Deployed commit: 6eb5ecedeaaf471b09c57f0ebef9b104d632bf08');
 
 /**
