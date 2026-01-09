@@ -213,10 +213,16 @@ export class CrystalViewer {
 
     // Controls
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enabled = true;
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
+    this.controls.enableRotate = true;
+    this.controls.enableZoom = true;
+    this.controls.enablePan = true;
     this.controls.autoRotate = this.autoRotate;
     this.controls.autoRotateSpeed = this.rotSpeed;
+
+
 
     // Environment
     this.buildEnvironment();
@@ -256,6 +262,7 @@ export class CrystalViewer {
     // Handle cross-fade: keep old group for fade out
     if (this.enableCrossFade && this.crystalGroup) {
       this.oldCrystalGroup = this.crystalGroup;
+      this.crystalGroup = null;
       this.oldFadeStart = performance.now();
     } else if (this.crystalGroup) {
       this.scene.remove(this.crystalGroup);
@@ -288,10 +295,13 @@ export class CrystalViewer {
 
       this.crystalGroup = meshResult;
 
-      // Add to scene immediately for initial load, defer for switches until old fade completes
-      if (!(this.enableCrossFade && this.oldCrystalGroup)) {
+      // Add the new crystal immediately for initial load, defer for switches until old fade completes
+      if (!this.oldCrystalGroup) {
         this.scene.add(this.crystalGroup);
       }
+
+      // For cross-fade switches, new fade starts after old completes
+      // (handled in animate when old fade finishes)
 
       // Calibrated node size: Hourglass (3100) -> 0.028, Weaver (25k) -> 0.013
       let nodeScaling = Math.max(0.005, Math.min(0.32, 0.005 + (1.3 / Math.sqrt(stats.nodes))));
@@ -516,7 +526,11 @@ export class CrystalViewer {
       }
     }
 
+    const lerp = (cur, tar, speed = 0.2) => cur + (tar - cur) * speed;
+
     // Sequential fade animation using global opacity uniforms
+    let opacity = 1.0;
+
     if (this.oldFadeStart) {
       const elapsed = performance.now() - this.oldFadeStart;
       const t = elapsed / this.oldFadeDuration;
@@ -528,32 +542,32 @@ export class CrystalViewer {
         });
         this.oldCrystalGroup = null;
         this.oldFadeStart = null;
-        // Add new model and start fade in
-        if (this.crystalGroup && this.enableCrossFade) {
+        // Start new fade
+        if (this.crystalGroup) {
           this.scene.add(this.crystalGroup);
           this.newFadeStart = performance.now();
-          this.customUniforms.uNodeOpacity.value = 0;
-          this.customUniforms.uLineOpacity.value = 0;
         }
       } else {
-        this.customUniforms.uNodeOpacity.value = 1 - t;
-        this.customUniforms.uLineOpacity.value = 1 - t;
+        opacity = 1 - t;
       }
     } else if (this.newFadeStart) {
       const elapsed = performance.now() - this.newFadeStart;
       const t = elapsed / this.newFadeDuration;
       if (t >= 1) {
         this.newFadeStart = null;
-        this.customUniforms.uNodeOpacity.value = 1.0;
-        this.customUniforms.uLineOpacity.value = 1.0;
+        opacity = 1.0;
       } else {
-        this.customUniforms.uNodeOpacity.value = t;
-        this.customUniforms.uLineOpacity.value = t;
+        opacity = t;
       }
     } else {
-      this.customUniforms.uNodeOpacity.value = 1.0;
-      this.customUniforms.uLineOpacity.value = 1.0;
+      // Outside fades, lerp opacity to target values
+      this.customUniforms.uLineOpacity.value = lerp(this.customUniforms.uLineOpacity.value, this.targetUniforms.uLineOpacity);
+      this.customUniforms.uNodeOpacity.value = lerp(this.customUniforms.uNodeOpacity.value, this.targetUniforms.uNodeOpacity);
     }
+
+    // Set global opacity for fades
+    this.customUniforms.uNodeOpacity.value = opacity;
+    this.customUniforms.uLineOpacity.value = opacity;
 
     // Start camera transition after fades complete
     if (this.pendingCameraTransition && !this.newFadeStart) {
@@ -566,8 +580,6 @@ export class CrystalViewer {
       this.pendingCameraTransition = null;
     }
 
-    const lerp = (cur, tar, speed = 0.2) => cur + (tar - cur) * speed;
-
     this.customUniforms.uLineNear.value = lerp(this.customUniforms.uLineNear.value, this.targetUniforms.uLineNear);
     this.customUniforms.uLineFar.value = lerp(this.customUniforms.uLineFar.value, this.targetUniforms.uLineFar);
     this.customUniforms.uNodeNear.value = lerp(this.customUniforms.uNodeNear.value, this.targetUniforms.uNodeNear);
@@ -578,8 +590,6 @@ export class CrystalViewer {
     this.customUniforms.uXorDensity.value = lerp(this.customUniforms.uXorDensity.value, this.targetUniforms.uXorDensity);
     this.customUniforms.uXorThreshold.value = lerp(this.customUniforms.uXorThreshold.value, this.targetUniforms.uXorThreshold);
     this.customUniforms.uColorInfluence.value = lerp(this.customUniforms.uColorInfluence.value, this.targetUniforms.uColorInfluence);
-    this.customUniforms.uLineOpacity.value = lerp(this.customUniforms.uLineOpacity.value, this.targetUniforms.uLineOpacity);
-    this.customUniforms.uNodeOpacity.value = lerp(this.customUniforms.uNodeOpacity.value, this.targetUniforms.uNodeOpacity);
     this.customUniforms.uInvertInfluence.value = lerp(this.customUniforms.uInvertInfluence.value, this.targetUniforms.uInvertInfluence);
     this.customUniforms.uNodeSaturation.value = lerp(this.customUniforms.uNodeSaturation.value, this.targetUniforms.uNodeSaturation);
 
@@ -750,8 +760,9 @@ export class CrystalViewer {
       shader.uniforms.uNodeFar = this.customUniforms.uNodeFar;
       shader.uniforms.uNodeDensity = this.customUniforms.uNodeDensity;
       shader.uniforms.uNodeSaturation = this.customUniforms.uNodeSaturation;
-      shader.uniforms.uNodeOpacity = this.customUniforms.uNodeOpacity;
       shader.uniforms.uPalette = this.customUniforms.uPalette;
+      shader.uniforms.uNodeOpacity = this.customUniforms.uNodeOpacity;
+      shader.uniforms.uCrystalOpacity = { value: 1.0 };
 
       shader.vertexShader = `
           varying float vPulse;
@@ -800,6 +811,7 @@ export class CrystalViewer {
           uniform float uNodeDensity;
           uniform float uNodeSaturation;
           uniform float uNodeOpacity;
+          uniform float uCrystalOpacity;
           uniform vec3 uPalette[6];
           
           float getHue(vec3 rgb) {
@@ -855,7 +867,7 @@ export class CrystalViewer {
           
           // Boost Alpha when density is low - increased multiplier to make nodes pop through lines
           float alphaBoost = 1.0 + (1.0 - uNodeDensity) * 4.0;
-          diffuseColor.a *= fog * alphaBoost * uNodeOpacity;
+          diffuseColor.a *= fog * alphaBoost * uNodeOpacity * uCrystalOpacity;
           
           // Brighten nodes slightly to make them more visible through lines
           diffuseColor.rgb *= 1.3;
@@ -930,9 +942,10 @@ export class CrystalViewer {
       shader.uniforms.uLineDensity = this.customUniforms.uLineDensity;
       shader.uniforms.uXorThreshold = this.customUniforms.uXorThreshold;
       shader.uniforms.uColorInfluence = this.customUniforms.uColorInfluence;
-      shader.uniforms.uLineOpacity = this.customUniforms.uLineOpacity;
       shader.uniforms.uInvertInfluence = this.customUniforms.uInvertInfluence;
       shader.uniforms.uPalette = this.customUniforms.uPalette;
+      shader.uniforms.uLineOpacity = this.customUniforms.uLineOpacity;
+      shader.uniforms.uCrystalOpacity = { value: 1.0 };
 
       shader.vertexShader = `
         attribute float aLineSeed;
@@ -963,6 +976,7 @@ export class CrystalViewer {
         uniform float uXorThreshold;
         uniform float uColorInfluence;
         uniform float uLineOpacity;
+        uniform float uCrystalOpacity;
         uniform float uInvertInfluence;
         uniform vec3 uPalette[6];
 
@@ -1021,7 +1035,7 @@ export class CrystalViewer {
 
         if (vSeed > uLineDensity) discard;
         float alphaBoost = 1.0 + (1.0 - uLineDensity) * 1.5;
-        diffuseColor.a = uLineOpacity * thinningAlpha * fog * alphaBoost;
+        diffuseColor.a = thinningAlpha * fog * alphaBoost * uLineOpacity * uCrystalOpacity;
         if (diffuseColor.a < 0.005) discard;
         `
       );
@@ -1048,10 +1062,11 @@ export class CrystalViewer {
       shader.uniforms.uXorDensity = this.customUniforms.uXorDensity;
       shader.uniforms.uXorThreshold = this.customUniforms.uXorThreshold;
       shader.uniforms.uColorInfluence = this.customUniforms.uColorInfluence;
-      shader.uniforms.uLineOpacity = this.customUniforms.uLineOpacity;
       shader.uniforms.uInvertInfluence = this.customUniforms.uInvertInfluence;
       shader.uniforms.uPalette = this.customUniforms.uPalette;
       shader.uniforms.uInvertInfluence = this.customUniforms.uInvertInfluence;
+      shader.uniforms.uLineOpacity = this.customUniforms.uLineOpacity;
+      shader.uniforms.uCrystalOpacity = { value: 1.0 };
 
       shader.vertexShader = `
         attribute float aLineSeed;
@@ -1079,6 +1094,7 @@ export class CrystalViewer {
         uniform float uXorThreshold;
         uniform float uColorInfluence;
         uniform float uLineOpacity;
+        uniform float uCrystalOpacity;
         uniform float uInvertInfluence;
         uniform vec3 uPalette[6];
 
@@ -1133,7 +1149,7 @@ export class CrystalViewer {
         float fog = pow(vDistAlpha, 2.0);
         float thinningAlpha = mix(1.0, pow(fog, 3.0), uThinning);
 
-        diffuseColor.a = uLineOpacity * uXorDensity * thinningAlpha * fog;
+        diffuseColor.a = uXorDensity * thinningAlpha * fog * uLineOpacity * uCrystalOpacity;
         if (diffuseColor.a < 0.001) discard;
         `
       );

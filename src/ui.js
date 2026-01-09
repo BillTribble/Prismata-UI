@@ -294,8 +294,8 @@ function applyFilters() {
     let hasVisibleItem = false;
 
     items.forEach(item => {
-      const name = item.dataset.name.toLowerCase();
-      const desc = item.dataset.desc.toLowerCase();
+      const name = (item.dataset.name || '').toLowerCase();
+      const desc = (item.dataset.desc || '').toLowerCase();
       const type = item.dataset.type;
 
       const matchesQuery = groupTitle.includes(query) || name.includes(query) || desc.includes(query);
@@ -971,6 +971,15 @@ function stopPlayback() {
     btnRecord.classList.remove('hidden');
   }
   if (btnResume) btnResume.classList.add('hidden');
+
+  // Ensure camera controls are re-enabled after playback stops
+  if (mainViewer && mainViewer.controls) {
+    mainViewer.controls.enabled = true;
+    mainViewer.controls.enableRotate = true;
+    mainViewer.controls.enableZoom = true;
+    mainViewer.controls.enablePan = true;
+  }
+
   showToast("Playback stopped.");
 }
 
@@ -993,6 +1002,14 @@ function pausePlayback() {
     }, { once: true });
   } else {
     console.log('btnResume is null');
+  }
+
+  // Ensure camera controls are enabled when playback is paused
+  if (mainViewer && mainViewer.controls) {
+    mainViewer.controls.enabled = true;
+    mainViewer.controls.enableRotate = true;
+    mainViewer.controls.enableZoom = true;
+    mainViewer.controls.enablePan = true;
   }
 }
 

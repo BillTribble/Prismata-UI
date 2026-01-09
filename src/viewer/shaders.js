@@ -22,6 +22,7 @@ export const flowVertexShader = `
 
 export const flowFragmentShader = `
     uniform float uTime;
+    uniform float uCrystalOpacity;
     varying vec3 vColor;
     varying float vZ;
 
@@ -30,7 +31,7 @@ export const flowFragmentShader = `
         vec2 uv = gl_PointCoord - 0.5;
         float dist = length(uv);
         if (dist > 0.5) discard;
-        
+
         // Soft edge
         float alpha = 1.0 - smoothstep(0.4, 0.5, dist);
 
@@ -39,7 +40,7 @@ export const flowFragmentShader = `
         // Frequency: 1.0 (spatial)
         // Speed: 4.0 (temporal)
         float wave = sin(vZ * 0.5 - uTime * 4.0);
-        
+
         // Make it a sparse pulse (mostly 'off', briefly 'on')
         // Widened pulse for visibility (from 0.95 to 0.8)
         float pulse = smoothstep(0.8, 1.0, wave);
@@ -49,6 +50,6 @@ export const flowFragmentShader = `
         vec3 col = mix(vColor, pulseColor, pulse * 0.8);
 
         // Output
-        gl_FragColor = vec4(col, 1.0); 
+        gl_FragColor = vec4(col, 1.0 * uCrystalOpacity);
     }
 `;
