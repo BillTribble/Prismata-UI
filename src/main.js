@@ -147,6 +147,9 @@ export class CrystalViewer {
     this.panMin = 3.0;
     this.panMax = 9.0;
 
+    // Initial Distance Multiplier
+    this.initialDistanceMultiplier = 0.9;
+
     // Model Info
     this.modelHeight = 15.0;
     this.modelBottom = -7.5;
@@ -271,6 +274,15 @@ export class CrystalViewer {
       const buffer = await response.arrayBuffer();
       const { meshResult, stats } = this.parsePLY(buffer);
 
+      // Ensure any existing crystal group is removed before assigning new one
+      if (this.crystalGroup) {
+        this.scene.remove(this.crystalGroup);
+        this.crystalGroup.children.forEach(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) child.material.dispose();
+        });
+      }
+
       this.crystalGroup = meshResult;
 
       // Add to scene immediately for initial load, defer for switches until old fade completes
@@ -325,7 +337,7 @@ export class CrystalViewer {
 
     const fovRad = this.camera.fov * (Math.PI / 180);
     let cameraDist = (maxDim / 2) / Math.tan(fovRad / 2);
-    cameraDist *= 1.4;
+    cameraDist *= this.initialDistanceMultiplier;
 
     // Temporarily disable damping to prevent lerp pause
     const originalDamping = this.controls.enableDamping;
@@ -375,7 +387,7 @@ export class CrystalViewer {
 
     const fovRad = this.camera.fov * (Math.PI / 180);
     let cameraDist = (maxDim / 2) / Math.tan(fovRad / 2);
-    cameraDist *= 1.4;
+    cameraDist *= this.initialDistanceMultiplier;
 
     const direction = new THREE.Vector3(1, 0.6, 1).normalize();
     const pos = center.clone().add(direction.multiplyScalar(cameraDist));
@@ -1227,6 +1239,10 @@ export class CrystalViewer {
 
   setPanMax(val) {
     this.panMax = val;
+  }
+
+  setInitialDistanceMultiplier(val) {
+    this.initialDistanceMultiplier = val;
   }
 
   toggleAutoPan() {

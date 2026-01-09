@@ -136,13 +136,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Try to load default attract mode
   try {
-    const attractRes = await fetch('./prismata_attract_1767869020832.json');
+    const attractRes = await fetch('/prismata_attract_13.json');
 
     if (attractRes.ok) {
       const data = await attractRes.json();
       if (Array.isArray(data) && data.length > 0) {
         recordingBuffer = data;
-        if (btnPlay) btnPlay.classList.remove('hidden');
+        if (btnRecord) btnRecord.classList.remove('hidden');
         if (btnSave) btnSave.classList.remove('hidden');
         console.log("✓ Attract mode loaded:", data.length, "events");
 
@@ -732,6 +732,26 @@ function setupControls() {
       btnMovement.classList.remove('open');
       movementSection.classList.remove('open');
     });
+
+    // Initial Distance Multiplier Slider
+    const initialDistanceSlider = document.createElement('div');
+    initialDistanceSlider.className = 'control-group';
+    initialDistanceSlider.innerHTML = `
+      <label for="initial-distance-slider" class="control-label">Initial Distance <span id="initial-distance-display">0.9</span></label>
+      <input type="range" id="initial-distance-slider" min="0.5" max="3.0" value="0.9" step="0.1">
+    `;
+    movementSection.appendChild(initialDistanceSlider);
+
+    const initialDistanceSliderEl = document.getElementById('initial-distance-slider');
+    if (initialDistanceSliderEl) {
+      initialDistanceSliderEl.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (mainViewer) mainViewer.setInitialDistanceMultiplier(val);
+        if (compareViewer) compareViewer.setInitialDistanceMultiplier(val);
+        document.getElementById('initial-distance-display').textContent = val.toFixed(1);
+        recordInteraction('setting', { id: 'initial-distance-slider', val: val });
+      });
+    }
   }
 
   // Auto FPS Toggle (Relocated to bottom of Perf)
@@ -779,6 +799,7 @@ function setupControls() {
         rotSpeed: parseFloat(document.getElementById('rot-speed').value),
         panMin: parseFloat(document.getElementById('pan-limit-min').value),
         panMax: parseFloat(document.getElementById('pan-limit-max').value),
+        initialDistanceMultiplier: parseFloat(document.getElementById('initial-distance-slider').value),
         pointSize: parseFloat(document.getElementById('point-size-slider').value),
         lfoAmount: parseFloat(document.getElementById('lfo-slider').value),
         lfoSpeed: parseFloat(document.getElementById('lfo-speed').value),
@@ -812,13 +833,23 @@ function setupControls() {
 
 // Record Attract Logic
 const btnRecord = document.getElementById('btn-record');
-const btnPlay = btnRecord;
 const btnSave = document.getElementById('btn-save-attract');
 const btnLoad = document.getElementById('btn-load-attract');
 
 if (btnRecord) {
   btnRecord.addEventListener('click', () => {
     if (!isRecording) {
+      // If playing, stop playback first
+      if (isPlaying) {
+        stopPlayback();
+      } else {
+        // If not playing and buffer exists, start playback
+        if (recordingBuffer.length > 0) {
+          startPlaybackSession();
+          return;
+        }
+        // Else, start recording
+      }
       // Start Recording
       isRecording = true;
       recordingBuffer = [];
@@ -826,6 +857,15 @@ if (btnRecord) {
       btnRecord.textContent = "STOP RECORDING";
       btnRecord.classList.add('active');
       showToast("Recording session (clicks, camera, settings)...");
+
+      // Disable cross-fade during recording for instant model switches
+      if (mainViewer) mainViewer.enableCrossFade = false;
+      if (compareViewer) compareViewer.enableCrossFade = false;
+
+      // Record initial model state
+      if (lastModelUrl) {
+        recordInteraction('model-load', { url: lastModelUrl, slot: 'main' });
+      }
 
       recordingInterval = setInterval(() => {
         if (mainViewer && mainViewer.camera && mainViewer.controls) {
@@ -850,8 +890,12 @@ if (btnRecord) {
       btnRecord.textContent = "RECORD ATTRACT";
       btnRecord.classList.remove('active');
 
+      // Re-enable cross-fade after recording
+      if (mainViewer) mainViewer.enableCrossFade = true;
+      if (compareViewer) compareViewer.enableCrossFade = true;
+
       if (recordingBuffer.length > 0) {
-        if (btnPlay) btnPlay.classList.remove('hidden');
+        if (btnRecord) btnRecord.classList.remove('hidden');
         if (btnSave) btnSave.classList.remove('hidden');
         const data = JSON.stringify(recordingBuffer);
         navigator.clipboard.writeText(data).then(() => {
@@ -887,7 +931,7 @@ if (btnLoad) {
       const data = JSON.parse(input);
       if (Array.isArray(data)) {
         recordingBuffer = data;
-        if (btnPlay) btnPlay.classList.remove('hidden');
+        if (btnRecord) btnRecord.classList.remove('hidden');
         if (btnSave) btnSave.classList.remove('hidden');
         showToast("Attract sequence loaded!");
       } else {
@@ -899,35 +943,17 @@ if (btnLoad) {
   });
 }
 
-if (btnPlay) {
-  btnPlay.addEventListener('click', () => {
-    if (isPlaying) {
-      if (isPlaybackPaused) {
-        resumePlayback();
-      } else {
-        stopPlayback();
-      }
-      return;
-    }
 
-    if (recordingBuffer.length === 0) {
-      showToast("Nothing recorded yet.", true);
-      return;
-    }
-
-    startPlaybackSession();
-  });
-}
 
 function startPlaybackSession() {
   console.log("Starting attract playback session...");
   isPlaying = true;
   isPlaybackPaused = false;
   playbackIndex = 0;
-  if (btnPlay) {
-    btnPlay.textContent = "STOP ATTRACT";
-    btnPlay.classList.add('active');
-    btnPlay.classList.remove('hidden');
+  if (btnRecord) {
+    btnRecord.textContent = "STOP ATTRACT";
+    btnRecord.classList.add('active');
+    btnRecord.classList.remove('hidden');
   }
   if (btnResume) btnResume.classList.add('hidden');
   showToast("Demo mode - interact to pause");
@@ -939,10 +965,10 @@ function stopPlayback() {
   isPlaying = false;
   isPlaybackPaused = false;
   if (playbackTimeout) clearTimeout(playbackTimeout);
-  if (btnPlay) {
-    btnPlay.textContent = "RECORD ATTRACT";
-    btnPlay.classList.remove('active');
-    btnPlay.classList.remove('hidden');
+  if (btnRecord) {
+    btnRecord.textContent = "RECORD ATTRACT";
+    btnRecord.classList.remove('active');
+    btnRecord.classList.remove('hidden');
   }
   if (btnResume) btnResume.classList.add('hidden');
   showToast("Playback stopped.");
@@ -953,7 +979,10 @@ function pausePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = true;
   if (playbackTimeout) clearTimeout(playbackTimeout);
-  if (btnPlay) btnPlay.classList.add('hidden');
+  if (btnRecord) {
+    btnRecord.textContent = "RECORD NEW";
+    btnRecord.classList.remove('hidden');
+  }
   if (btnResume) {
     console.log('Removing hidden from btnResume');
     btnResume.classList.remove('hidden');
@@ -971,9 +1000,9 @@ function resumePlayback() {
   if (!isPlaying) return;
   isPlaybackPaused = false;
   if (btnResume) btnResume.classList.add('hidden');
-  if (btnPlay) {
-    btnPlay.classList.remove('hidden');
-    btnPlay.textContent = "STOP ATTRACT";
+  if (btnRecord) {
+    btnRecord.classList.remove('hidden');
+    btnRecord.textContent = "STOP ATTRACT";
   }
   showToast("Resuming playback...");
 
@@ -991,6 +1020,14 @@ function startPlayback(index) {
   if (!isPlaying || isPlaybackPaused) return;
 
   if (index >= recordingBuffer.length) {
+    // Check if recording has model switches - if not, stop instead of loop
+    const hasModelLoads = recordingBuffer.some(event => event.type === 'model-load');
+    if (!hasModelLoads) {
+      // Stop playback for camera-only recordings
+      stopPlayback();
+      return;
+    }
+
     // Loop: Restart with Twin Spires
     showToast("Looping playback...");
     const items = Array.from(navList.querySelectorAll('.crystal-item'));
