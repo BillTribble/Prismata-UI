@@ -455,7 +455,57 @@ async function handleLoadCrystal(data, slot) {
   ui.type.textContent = data.type;
 
   try {
+    // Before loading, capture current camera if recording and main
+    let currentCam = null;
+    if (isRecording && slot === 'main') {
+      currentCam = {
+        pos: mainViewer.camera.position.clone(),
+        target: mainViewer.controls.target.clone()
+      };
+    }
+
     const stats = await viewer.loadCrystal(data.url);
+
+    // After loading, if recording, capture target and animate
+    if (isRecording && slot === 'main') {
+      const targetCam = {
+        pos: mainViewer.camera.position.clone(),
+        target: mainViewer.controls.target.clone()
+      };
+
+      // Reset to current
+      mainViewer.camera.position.copy(currentCam.pos);
+      mainViewer.controls.target.copy(currentCam.target);
+      mainViewer.controls.update();
+
+      // Disable controls during animation
+      mainViewer.controls.enabled = false;
+
+      // Animate over 1 second (60 frames, ~16ms intervals)
+      const startPos = currentCam.pos.clone();
+      const startTarget = currentCam.target.clone();
+      const endPos = targetCam.pos.clone();
+      const endTarget = targetCam.target.clone();
+
+      const steps = 60;
+      let step = 0;
+
+      function animate() {
+        step++;
+        const ratio = step / steps;
+        mainViewer.camera.position.lerpVectors(startPos, endPos, ratio);
+        mainViewer.controls.target.lerpVectors(startTarget, endTarget, ratio);
+        mainViewer.controls.update();
+
+        if (step < steps) {
+          setTimeout(animate, 16);
+        } else {
+          // Re-enable controls after animation
+          mainViewer.controls.enabled = true;
+        }
+      }
+      animate();
+    }
 
     ui.nodes.textContent = stats.nodes.toLocaleString();
     ui.links.textContent = stats.links.toLocaleString();
