@@ -704,6 +704,17 @@ function setupControls() {
     });
   }
 
+   // Pan Speed Slider
+   const panSpeedSlider = document.getElementById('pan-speed');
+   if (panSpeedSlider) {
+     panSpeedSlider.addEventListener('input', (e) => {
+       const speed = parseFloat(e.target.value);
+       if (mainViewer) mainViewer.setPanSpeed(speed);
+       if (compareViewer) compareViewer.setPanSpeed(speed);
+     });
+   }
+
+
   // Pan Limits Sliders
   // Dual Range Slider Logic
   const rangeMin = document.getElementById('pan-limit-min');
@@ -858,7 +869,7 @@ function setupControls() {
     orbitronRow.innerHTML = `
       <div class="control-group">
         <label>
-          <input type="checkbox" id="replace-orbitron"> Also replace Orbitron
+          <input type="checkbox" id="replace-orbitron" checked> Also replace Orbitron
         </label>
       </div>
       <div class="control-group">
@@ -947,7 +958,11 @@ function setupControls() {
       replaceOrbitron.addEventListener('change', applyFont);
       keepH1.addEventListener('change', applyFont);
 
-      // Initial application if needed, but defaults are set in CSS
+      // Set Inter as default
+      fontSelect.value = 'inter';
+
+      // Apply initial font settings
+      applyFont();
     }
   }
 }
