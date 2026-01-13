@@ -367,7 +367,7 @@ async function loadGallery() {
       const groupTitle = document.createElement('div');
       groupTitle.className = 'model-title';
       // Year | Name
-      groupTitle.innerHTML = `<span style="opacity:0.6; font-family:monospace; margin-right:8px;">${model.year}</span> ${model.name}`;
+      groupTitle.innerHTML = `<span style="opacity:1; font-family:monospace; font-weight:300; margin-right:8px;">${model.year}</span> ${model.name}`;
 
       groupTitle.addEventListener('click', () => {
         groupDiv.classList.toggle('active');
@@ -391,7 +391,6 @@ async function loadGallery() {
 
         item.innerHTML = `
                     <span class="item-name">${crystal.name}</span>
-                    <span class="item-desc">${crystal.desc.substring(0, 35)}...</span>
                 `;
 
         item.addEventListener('click', () => {
@@ -555,7 +554,7 @@ function parseMarkdown(text) {
   html = html.replace(/\\n/g, '\n');
 
   // 1. Structural
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#fff;">$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#aee6f0;">$1</strong>');
   html = html.replace(/^#\s+(.*)$/gm, '');
 
   // 2. Headers (Global replacement because of possible leading whitespace issues or newlines)
@@ -838,6 +837,38 @@ function setupControls() {
       });
     }
 
+    // Font Switcher
+    const fontRow = document.createElement('div');
+    fontRow.className = 'control-row';
+    fontRow.innerHTML = `
+      <div class="control-group full-width">
+        <label for="font-select">FONT SWITCHER</label>
+        <select id="font-select">
+          <option value="arimo">Arimo (Default)</option>
+          <option value="inter">Inter</option>
+          <option value="rajdhani">Rajdhani</option>
+          <option value="ibm">IBM Plex Sans</option>
+        </select>
+      </div>
+    `;
+    perfSection.appendChild(fontRow);
+
+    const orbitronRow = document.createElement('div');
+    orbitronRow.className = 'control-row';
+    orbitronRow.innerHTML = `
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="replace-orbitron"> Also replace Orbitron
+        </label>
+      </div>
+      <div class="control-group">
+        <label>
+          <input type="checkbox" id="keep-h1-orbitron" checked> Keep H1 as Orbitron
+        </label>
+      </div>
+    `;
+    perfSection.appendChild(orbitronRow);
+
     // copySettingsBtn
     const copySettingsBtn = document.createElement('button');
     copySettingsBtn.className = 'minimal-btn';
@@ -878,6 +909,46 @@ function setupControls() {
       });
     });
     perfSection.appendChild(copySettingsBtn);
+
+    // Font Switcher Logic
+    const fontSelect = document.getElementById('font-select');
+    const replaceOrbitron = document.getElementById('replace-orbitron');
+    const keepH1 = document.getElementById('keep-h1-orbitron');
+    const h1Element = document.querySelector('.logo-text h1');
+
+    if (fontSelect && replaceOrbitron && keepH1 && h1Element) {
+      const applyFont = () => {
+        const font = fontSelect.value;
+        const applyToHeader = replaceOrbitron.checked;
+        const keepH1Orbitron = keepH1.checked;
+        const root = document.documentElement.style;
+
+        const fontMap = {
+          rajdhani: 'Rajdhani, sans-serif',
+          inter: 'Inter, sans-serif',
+          arimo: 'Arimo, sans-serif',
+          ibm: 'IBM Plex Sans, sans-serif'
+        };
+
+        root.setProperty('--font-body', fontMap[font] || 'Inter, sans-serif');
+        root.setProperty('--font-mono', fontMap[font] || 'Inter, sans-serif');
+
+        const headerFont = applyToHeader ? (fontMap[font] || 'Orbitron, sans-serif') : 'Orbitron, sans-serif';
+        root.setProperty('--font-header', headerFont);
+
+        if (keepH1Orbitron) {
+          h1Element.style.fontFamily = 'Orbitron, sans-serif';
+        } else {
+          h1Element.style.fontFamily = headerFont;
+        }
+      };
+
+      fontSelect.addEventListener('change', applyFont);
+      replaceOrbitron.addEventListener('change', applyFont);
+      keepH1.addEventListener('change', applyFont);
+
+      // Initial application if needed, but defaults are set in CSS
+    }
   }
 }
 
